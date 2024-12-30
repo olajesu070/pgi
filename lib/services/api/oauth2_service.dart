@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:pgi/core/utils/scopes.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:uuid/uuid.dart';
 
 class OAuth2Service {
   final String clientId;
@@ -26,10 +27,33 @@ class OAuth2Service {
     required this.onTokensUpdated,
   });
 
-  /// Starts the OAuth2 flow by opening the authorization URL.
-  Future<void> startOAuthFlow() async {
+  void navigateToHome(BuildContext context) {
+    Navigator.of(context).pushReplacementNamed('/home');
+  }
+
+  String _generateState() {
+    final random = Random.secure();
+    final values = List<int>.generate(32, (i) => random.nextInt(256));
+    return base64Url.encode(values)
+        .replaceAll('=', '')
+        .replaceAll('+', '-')
+        .replaceAll('/', '_');
+  }
+
+  Uri _getAuthorizationUrl() {
+    try {
+      final authUrl = Uri.parse(authorizationEndpoint);
+      return authUrl;
+    } catch (e) {
+      throw Exception('Invalid authorization endpoint URL: $authorizationEndpoint');
+    }
+  }
+
+  Future<void> startOAuthFlow(BuildContext context) async {
     final state = _generateState();
-    final authorizationUrl = Uri.parse(authorizationEndpoint).replace(queryParameters: {
+    await secureStorage.write(key: 'state', value: state);
+
+    final authorizationUrl = _getAuthorizationUrl().replace(queryParameters: {
       'response_type': 'code',
       'client_id': clientId,
       'redirect_uri': redirectUri,
@@ -37,125 +61,147 @@ class OAuth2Service {
       'scope': getScopesAsString(),
     });
 
-    await secureStorage.write(key: 'authState', value: state);
+    try {
+      final result = await FlutterWebAuth2.authenticate(
+        url: authorizationUrl.toString(),
+        callbackUrlScheme: Uri.parse(redirectUri).scheme,
+      );
 
-    if (await canLaunch(authorizationUrl.toString())) {
-      await launch(authorizationUrl.toString());
-    } else {
-      throw Exception('Could not launch authorization URL');
+      final uri = Uri.parse(result);
+      await handleRedirect(uri, context);
+    } catch (e) {
+      print('Error during OAuth flow: $e');
+      rethrow;
     }
   }
 
-  /// Handles the redirect after user authentication.
-  Future<void> handleRedirect(Uri redirect) async {
-    final storedState = await secureStorage.read(key: 'authState');
+  Future<void> _updateTokensAndNavigate(
+      String accessToken, String refreshToken, String expirationDate, BuildContext context) async {
+    await secureStorage.write(key: 'accessToken', value: accessToken);
+    await secureStorage.write(key: 'refreshToken', value: refreshToken);
+    await secureStorage.write(key: 'expirationDate', value: expirationDate);
 
-    final queryParameters = redirect.queryParameters;
-    final returnedState = queryParameters['state'];
-    final authCode = queryParameters['code'];
-    final error = queryParameters['error'];
+    onTokensUpdated();
+    navigateToHome(context);
+  }
 
+  Future<void> handleRedirect(Uri uri, BuildContext context) async {
+    final error = uri.queryParameters['error'];
     if (error != null) {
-      throw Exception('OAuth2 error: $error');
+      throw Exception('Error during OAuth flow: $error');
     }
 
-    if (storedState == null || returnedState != storedState) {
-      throw Exception('State mismatch error');
+    final state = uri.queryParameters['state'];
+    final storedState = await secureStorage.read(key: 'state');
+
+    if (state != storedState) {
+      throw Exception('Invalid state parameter');
     }
 
-    if (authCode == null) {
-      throw Exception('Authorization code not found');
-    }
+    await secureStorage.delete(key: 'state');
+    final code = uri.queryParameters['code'];
 
-    await _exchangeCodeForToken(authCode);
-  }
+    if (code != null) {
+      final tokenUrl = Uri.parse(tokenEndpoint);
 
-  /// Exchanges the authorization code for access and refresh tokens.
-  Future<void> _exchangeCodeForToken(String authCode) async {
-    final response = await http.post(
-      Uri.parse(tokenEndpoint),
-      headers: {
+      final headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': 'Basic ${base64Encode(utf8.encode('$clientId:$clientSecret'))}',
-      },
-      body: {
+      };
+      final body = {
         'grant_type': 'authorization_code',
-        'code': authCode,
+        'code': code,
         'redirect_uri': redirectUri,
-      },
-    );
+        'client_id': clientId,
+        'client_secret': clientSecret,
+      };
+
+      final response = await http.post(tokenUrl, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final accessToken = responseData['access_token'];
+        final refreshToken = responseData['refresh_token'];
+        final expiresIn = responseData['expires_in'];
+        final expirationDate = DateTime.now().add(Duration(seconds: expiresIn)).toIso8601String();
+
+        await _updateTokensAndNavigate(accessToken, refreshToken, expirationDate, context);
+      } else {
+        throw Exception('Failed to exchange authorization code for tokens');
+      }
+    } else {
+      throw Exception('Authorization code not found in redirect URI');
+    }
+  }
+
+  Future<void> refreshAccessToken(BuildContext context) async {
+    final refreshToken = await secureStorage.read(key: 'refreshToken');
+
+    if (refreshToken == null) {
+      throw Exception('Refresh token not available.');
+    }
+
+    final tokenUrl = Uri.parse(tokenEndpoint);
+
+    final headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Basic ${base64Encode(utf8.encode('$clientId:$clientSecret'))}',
+    };
+    final body = {
+      'grant_type': 'refresh_token',
+      'refresh_token': refreshToken,
+      'client_id': clientId,
+      'client_secret': clientSecret,
+    };
+
+    final response = await http.post(tokenUrl, headers: headers, body: body);
 
     if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
+      final responseData = json.decode(response.body);
       final accessToken = responseData['access_token'];
-      final refreshToken = responseData['refresh_token'];
+      final newRefreshToken = responseData['refresh_token'] ?? refreshToken;
       final expiresIn = responseData['expires_in'];
-
-      final expirationDate = DateTime.now().add(Duration(seconds: expiresIn));
+      final expirationDate = DateTime.now().add(Duration(seconds: expiresIn)).toIso8601String();
 
       await secureStorage.write(key: 'accessToken', value: accessToken);
-      await secureStorage.write(key: 'refreshToken', value: refreshToken);
-      await secureStorage.write(key: 'expirationDate', value: expirationDate.toIso8601String());
+      await secureStorage.write(key: 'refreshToken', value: newRefreshToken);
+      await secureStorage.write(key: 'expirationDate', value: expirationDate);
 
       onTokensUpdated();
     } else {
-      throw Exception('Failed to exchange authorization code for tokens');
+      throw Exception('Failed to refresh access token');
     }
   }
 
-  /// Refreshes the access token using the refresh token.
-  Future<void> _refreshAccessToken() async {
-    final refreshToken = await secureStorage.read(key: 'refreshToken');
-
-    if (refreshToken != null) {
-      final response = await http.post(
-        Uri.parse(tokenEndpoint),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': 'Basic ${base64Encode(utf8.encode('$clientId:$clientSecret'))}',
-        },
-        body: {
-          'grant_type': 'refresh_token',
-          'refresh_token': refreshToken,
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final accessToken = responseData['access_token'];
-        final expiresIn = responseData['expires_in'];
-
-        final expirationDate = DateTime.now().add(Duration(seconds: expiresIn));
-
-        await secureStorage.write(key: 'accessToken', value: accessToken);
-        await secureStorage.write(key: 'expirationDate', value: expirationDate.toIso8601String());
-
-        onTokensUpdated();
-      } else {
-        throw Exception('Failed to refresh access token');
-      }
-    }
-  }
-
-  /// Checks if the access token is expired and refreshes it if needed.
-  Future<void> refreshTokenIfNeeded() async {
+  Future<void> ensureValidAccessToken(BuildContext context) async {
     final expirationDateStr = await secureStorage.read(key: 'expirationDate');
-
     if (expirationDateStr != null) {
       final expirationDate = DateTime.parse(expirationDateStr);
       if (DateTime.now().isAfter(expirationDate)) {
-        await _refreshAccessToken();
+        await refreshAccessToken(context);
       }
+    } else {
+      await refreshAccessToken(context);
     }
   }
 
-  /// Logs out the user by clearing all tokens.
-  Future<void> logout() async {
-    await secureStorage.deleteAll();
-  }
+  // Future<void> makeAuthenticatedApiCall(BuildContext context) async {
+  //   await ensureValidAccessToken(context);
 
-  /// Generates a random state parameter for CSRF protection.
-  String _generateState() {
-    return const Uuid().v4();
-  }
+  //   final accessToken = await secureStorage.read(key: 'accessToken');
+  //   final headers = {
+  //     'Authorization': 'Bearer $accessToken',
+  //   };
+
+  //   final response = await http.get(
+  //     Uri.parse('https://example.com/protected-endpoint'),
+  //     headers: headers,
+  //   );
+
+  //   if (response.statusCode == 200) {
+  //     print('API call successful: ${response.body}');
+  //   } else {
+  //     print('API call failed: ${response.body}');
+  //   }
+  // }
 }

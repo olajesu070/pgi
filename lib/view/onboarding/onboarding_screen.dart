@@ -1,79 +1,121 @@
 import 'dart:convert';
-import 'dart:math';
-
-import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
-import 'package:flutter_appauth/flutter_appauth.dart';
+import 'package:app_links/app_links.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pgi/services/api/oauth2_service.dart';
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
-  static const FlutterAppAuth appAuth = FlutterAppAuth();
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
 
-  /// Generates a secure random state parameter for OAuth2 requests.
-  static String generateState() {
-    final Random random = Random.secure();
-    final List<int> values = List<int>.generate(16, (_) => random.nextInt(256)); // 128-bit (16 bytes)
-    return base64Url.encode(values).replaceAll('=', ''); // URL-safe string
+class _OnboardingScreenState extends State<OnboardingScreen> {
+  late OAuth2Service _oauth2Service;
+
+  final _appLinks = AppLinks();
+  String? _accessToken;
+  String? _refreshToken;
+  DateTime? _expirationDate;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeOAuth2Service();
+    _initializeAppLinks();
+    _checkAndRefreshToken();
   }
 
-  Future<void> _login(BuildContext context) async {
-    const String clientId = '7887150025286687';
-    const String redirectUri = 'https://pgi.org/auth/signIn'; // Deep link
-    const String authorizationEndpoint = 'https://pgi.org/oauth2/authorize';
-    const String tokenEndpoint = 'https://pgi.org/api/oauth2/token';
 
-    try {
-      // Log the start of the login flow
-      developer.log('Starting OAuth2 login flow...', name: 'OAuth2Login');
+  void _setLoading(bool loading) {
+    setState(() {
+      _isLoading = loading;
+    });
+  }
 
-      final String state = generateState();
-      // Log generated state
-      developer.log('Generated state: $state', name: 'OAuth2Login');
+  void _initializeOAuth2Service() {
+    _oauth2Service = OAuth2Service(
+      clientId: '3128580506330804',
+      clientSecret: 'h57Dml8kYuqgDhspqvQWN9CMGdQQm3_T',
+      authorizationEndpoint: 'https://pgi.org/oauth2/authorize',
+      tokenEndpoint: 'https://pgi.org/api/oauth2/token',
+      redirectUri: 'https://pgi.org/auth/signIn',
+      secureStorage: const FlutterSecureStorage(),
+      onTokensUpdated: _loadStoredTokens,
+    );
+  }
 
-      final AuthorizationTokenResponse result =
-          await appAuth.authorizeAndExchangeCode(
-        AuthorizationTokenRequest(
-          clientId,
-          redirectUri,
-          serviceConfiguration: const AuthorizationServiceConfiguration(
-            authorizationEndpoint: authorizationEndpoint,
-            tokenEndpoint: tokenEndpoint,
-          ),
-          scopes: ['user:read', 'user:write'], // Define the required scopes
-        ),
-      );
-
-      if (result != null) {
-        // Tokens obtained
-        developer.log('Access token obtained successfully', name: 'OAuth2Login');
-        developer.log('Access Token: ${result.accessToken}', name: 'OAuth2Login');
-        developer.log('Refresh Token: ${result.refreshToken}', name: 'OAuth2Login');
-
-        // Use the access token for API requests
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Successful!')),
-        );
-      } else {
-        developer.log('Authorization failed or was cancelled by the user.', name: 'OAuth2Login');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Authorization Cancelled')),
-        );
+  void _initializeAppLinks() {
+    _appLinks.getInitialLink().then((uri) {
+      if (uri != null) {
+        developer.log("Initial deep link received: $uri");
+        _oauth2Service.handleRedirect(uri, context);
       }
-    } catch (e, stacktrace) {
-      developer.log(
-        'Error during OAuth2 login process',
-        name: 'OAuth2Login',
-        error: e,
-        stackTrace: stacktrace,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+    });
+
+    _appLinks.uriLinkStream.listen((uri) {
+      developer.log("Deep link received: $uri");
+      _oauth2Service.handleRedirect(uri, context);
+    });
+  }
+
+  Future<void> _loadStoredTokens() async {
+    final storage = const FlutterSecureStorage();
+    final accessToken = await storage.read(key: 'accessToken');
+    final refreshToken = await storage.read(key: 'refreshToken');
+    final expirationDateString = await storage.read(key: 'expirationDate');
+
+    setState(() {
+      _accessToken = accessToken;
+      _refreshToken = refreshToken;
+      _expirationDate = expirationDateString != null
+          ? DateTime.tryParse(expirationDateString)
+          : null;
+    });
+  }
+
+  Future<void> _checkAndRefreshToken() async {
+    _setLoading(true); // Start loading
+    try {
+      await _loadStoredTokens();
+
+      if (_accessToken != null && _refreshToken != null && _expirationDate != null) {
+        final now = DateTime.now();
+        if (_expirationDate!.isBefore(now)) {
+          await _oauth2Service.refreshAccessToken(context);
+          developer.log("Access token refreshed successfully.");
+        }
+      } else {
+        developer.log("No valid token found. Prompting user to log in.");
+      }
+    } catch (e) {
+      developer.log("Error refreshing token: $e");
+      // _login();
+    } finally {
+      _setLoading(false); // Stop loading
+    }
+  }
+  void _showSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+ void _login() async {
+    _setLoading(true); // Start loading
+    try {
+      await _oauth2Service.startOAuthFlow(context);
+      _oauth2Service.onTokensUpdated();
+    } catch (e) {
+      developer.log("Error during login: $e");
+    } finally {
+      _setLoading(false); // Stop loading
     }
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
@@ -81,7 +123,7 @@ class OnboardingScreen extends StatelessWidget {
           // Background Image
           Positioned.fill(
             child: Image.asset(
-              'assets/pgi.jpeg', // Replace with your image path
+              'assets/pgi.jpeg',
               fit: BoxFit.cover,
             ),
           ),
@@ -92,16 +134,13 @@ class OnboardingScreen extends StatelessWidget {
               height: MediaQuery.of(context).size.height * 0.3,
               decoration: const BoxDecoration(
                 color: Color(0xD70A5338),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(30),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // Title
                   const Text(
                     'Welcome to PGI',
                     style: TextStyle(
@@ -111,31 +150,20 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  // Welcome Note
                   const Text(
                     'Welcome to Pyrotechnics Guild International where enthusiasts and professionals connect, share, and celebrate the art of fireworks.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xDFFFFFFF),
-                    ),
+                    style: TextStyle(fontSize: 16, color: Color(0xDFFFFFFF)),
                   ),
                   const SizedBox(height: 30),
-                  // Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      // Test Flutter Web Auth Button
                       TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/signIn');
-                        },
+                        onPressed: _login,
                         child: const Text(
                           'Login here',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Color(0xFFDBDBDB),
-                          ),
+                          style: TextStyle(fontSize: 18, color: Color(0xFFDBDBDB)),
                         ),
                       ),
                     ],
@@ -144,6 +172,18 @@ class OnboardingScreen extends StatelessWidget {
               ),
             ),
           ),
+          // Loading Overlay
+          if (_isLoading)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.5),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

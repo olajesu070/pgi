@@ -2,7 +2,6 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:pgi/routes/bottom_navigation.dart';
-import 'package:pgi/view/auth/sign_in_screen.dart';
 import 'package:pgi/view/auth/sign_up_screen.dart';
 import 'package:pgi/view/discussion/discussion_screen.dart';
 import 'package:pgi/view/gallery/gallery_screen.dart';
@@ -51,8 +50,8 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       routes: {
         '/': (context) => const OnboardingScreen(),
-        '/signIn': (context) => const SignInScreen(),
-        '/auth/signIn': (context) => const SignInScreen(),
+        // '/signIn': (context) => const SignInScreen(),
+        // '/auth/signIn': (context) => const SignInScreen(),
         '/signUp': (context) => const SignUpScreen(),
         '/home': (context) => const BottomNavigation(),
         '/profile': (context) => const ProfileScreen(userName: 'Logboi'),
