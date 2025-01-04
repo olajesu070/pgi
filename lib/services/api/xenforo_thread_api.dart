@@ -64,7 +64,7 @@ Future<void> logResponseToFile(String responseBody) async {
   // Process API response
   Map<String, dynamic> _processResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      logResponseToFile(response.body);
+      // logResponseToFile(response.body);
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to connect to API: ${response.body}');

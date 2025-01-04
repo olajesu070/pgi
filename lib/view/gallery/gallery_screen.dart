@@ -1,9 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/services/api/xenforo_media_service.dart';
 import 'package:pgi/view/widgets/gallery_card.dart';
 import 'package:pgi/view/widgets/gallery_details_screen.dart';
 
-class GalleryScreen extends StatelessWidget {
+class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
+
+  @override
+  State<GalleryScreen> createState() => _GalleryScreenState();
+}
+
+class _GalleryScreenState extends State<GalleryScreen> {
+  final mediaService = MediaService();
+  List<dynamic> mediaAlbums = []; // State to hold fetched albums
+  bool isLoading = true; // Loading indicator
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMedia();
+  }
+
+ Future<void> _fetchMedia() async {
+  try {
+    final response = await mediaService.fetchAllMediaAlbums();
+    
+    // Extract the 'albums' field from the response
+    final albums = response['albums'] as List<dynamic>;
+
+    setState(() {
+      mediaAlbums = albums; // Update state with the list of albums
+      isLoading = false;
+    });
+  } catch (e) {
+    print('Error fetching media: $e');
+    setState(() {
+      isLoading = false;
+    });
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -20,50 +56,37 @@ class GalleryScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: galleryItems.length,
-        itemBuilder: (context, index) {
-          final item = galleryItems[index];
-          return GalleryCard(
-            imageUrl: item['imageUrl'],
-            title: item['title'],
-            pictureCount: item['pictureCount'],
-            videoCount: item['videoCount'],
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GalleryDetailScreen(title: item['title']),
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : mediaAlbums.isEmpty
+              ? const Center(
+                  child: Text('No albums available.'),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: mediaAlbums.length,
+                  itemBuilder: (context, index) {
+                    final album = mediaAlbums[index];
+                    return GalleryCard(
+                      imageUrl: album['thumbnail_url'] ?? 'https://via.placeholder.com/150',
+                      title: album['title'] ?? 'Untitled Album',
+                      avatarUrl: album['User']?['avatar_urls']?['s'] ?? 'https://via.placeholder.com/50',
+                      username: album['username'] ?? 'Unknown User',
+                      mediaCount: album['media_count'] ?? 0,
+                      viewCount: album['view_count'] ?? 0,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => GalleryDetailScreen(title: album['title'], albumId: album['album_id']),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }
-
-
-final List<Map<String, dynamic>> galleryItems = [
-  {
-    'imageUrl': 'https://picsum.photos/100/100',
-    'title': 'Vacation 2024',
-    'pictureCount': 12,
-    'videoCount': 5,
-  },
-  {
-    'imageUrl': 'https://picsum.photos/101/101',
-    'title': 'Family Events',
-    'pictureCount': 20,
-    'videoCount': 8,
-  },
-  {
-    'imageUrl': 'https://picsum.photos/102/102',
-    'title': 'Nature Photography',
-    'pictureCount': 15,
-    'videoCount': 3,
-  },
-  // Add more album entries as needed
-];

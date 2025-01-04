@@ -85,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (_accessToken != null && _refreshToken != null && _expirationDate != null) {
         final now = DateTime.now();
         if (_expirationDate!.isBefore(now)) {
-          await _oauth2Service.refreshAccessToken(context);
+          await _oauth2Service.ensureValidAccessToken(context);
           developer.log("Access token refreshed successfully.");
         }
       } else {

@@ -1,13 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/view/misc/edit_profile_screen.dart';
+import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final String userName;
 
-  const ProfileScreen({super.key, required this.userName});
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+     final userState = Provider.of<UserState>(context);
+    final userDetails = userState.userDetails;
+    final String firstName = userDetails?['me']['custom_fields']['firstname'] ?? '';
+    final String lastName = userDetails?['me']['custom_fields']['lastname'] ?? '';
+    final String email = userDetails?['me']['email'] ?? '';
+    final String about = (userDetails?['me']['about'] ?? '').isEmpty 
+    ? 'Please update your about section.' 
+    : userDetails?['me']['about']!;
+    final String userName = '$firstName $lastName';
+    final String avatarUrl = userDetails?['me']['avatar_urls']['o'] ?? 'https://picsum.photos/200/300';
+    final bool isActiveMember = userDetails?['me']['activity_visible'] ?? false;
+    final int messages = userDetails?['me']['message_count'] ?? 0;
+    final int reactionScore = userDetails?['me']['reaction_score'] ?? 0;
+    final int points = userDetails?['me']['vote_score'] ?? 0;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
@@ -19,15 +35,34 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
-        child: Padding(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+              decoration: BoxDecoration(
+                color: const Color(0xE0BDEC66),
+                borderRadius: BorderRadius.circular(0),
+              ),
+              child: Text(
+                isActiveMember ? 'Active PGI Member' : 'Guest',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+        ),
+        Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // User Avatar
-              const CircleAvatar(
+            CircleAvatar(
                 radius: 60, // Size of the avatar
-                backgroundImage: NetworkImage('https://picsum.photos/212'), // Replace with user avatar URL
+                backgroundImage: NetworkImage(avatarUrl), // Replace with user avatar URL
               ),
               const SizedBox(height: 16),
 
@@ -36,13 +71,18 @@ class ProfileScreen extends StatelessWidget {
                 userName,
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 5),
+               Text(
+                email,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 30),
 
               // Statistics Row (Messages, Media, Reactions, Points)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildStatColumn('Messages', '100'),
+                  _buildStatColumn('Messages', messages.toString()),
                   const SizedBox(width: 16),  // Space between the columns
                   const Divider(
                     color: Colors.grey,  // Divider color
@@ -50,7 +90,8 @@ class ProfileScreen extends StatelessWidget {
                     thickness: 1,  // Divider thickness
                   ),
                   const SizedBox(width: 16),  // Space between the columns
-                  _buildStatColumn('Media', '200'),
+                
+                  _buildStatColumn('Reactions', reactionScore.toString()),
                   const SizedBox(width: 16),  // Space between the columns
                   const Divider(
                     color: Colors.grey,
@@ -58,18 +99,10 @@ class ProfileScreen extends StatelessWidget {
                     thickness: 1,
                   ),
                   const SizedBox(width: 16),
-                  _buildStatColumn('Reactions', '300'),
-                  const SizedBox(width: 16),  // Space between the columns
-                  const Divider(
-                    color: Colors.grey,
-                    height: 40,
-                    thickness: 1,
-                  ),
-                  const SizedBox(width: 16),
-                  _buildStatColumn('Points', '400'),
+                  _buildStatColumn('Points', points.toString()),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Edit Profile Button
              OutlinedButton.icon(
@@ -98,30 +131,34 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque ut purus et nisi gravida ullamcorper. Morbi ut risus nec sapien ullamcorper varius.',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 24),
-
-              // My Recent Events Title
-              const Align(
+               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'My Recent Events',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  about,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
-              ),
-              const SizedBox(height: 8),
+              )
+
+              // My Recent Events Title
+              // const Align(
+              //   alignment: Alignment.centerLeft,
+              //   child: Text(
+              //     'My Recent Events',
+              //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              //   ),
+              // ),
+              // const SizedBox(height: 8),
 
               // Schedule Card List
-              _buildRecentEventsList(),
+              // _buildRecentEventsList(),
             ],
+            ),
           ),
-        ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+    }
 
   // Helper method to build a statistic column
   Widget _buildStatColumn(String label, String count) {

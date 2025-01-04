@@ -1,92 +1,174 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'image_viewer.dart';
+import 'video_player_screen.dart';
+import 'package:pgi/services/api/xenforo_media_service.dart';
 
-class GalleryDetailScreen extends StatelessWidget {
+class GalleryDetailScreen extends StatefulWidget {
   final String title;
+  final int albumId;
 
-  GalleryDetailScreen({super.key, required this.title});
+  const GalleryDetailScreen({Key? key, required this.title, required this.albumId}) : super(key: key);
 
-  final List<String> galleryItems = [
-    'https://picsum.photos/100/100', // Example images
-    'https://picsum.photos/101/101',
-    'https://picsum.photos/102/102',
-    // Add more image URLs as needed
-  ];
+  @override
+  State<GalleryDetailScreen> createState() => _GalleryDetailScreenState();
+}
+
+class _GalleryDetailScreenState extends State<GalleryDetailScreen> {
+  bool _isLoading = true;
+  bool _hasError = false;
+  List<Map<String, dynamic>> _mediaItems = [];
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMedia();
+  }
+
+  Future<void> _fetchMedia() async {
+    try {
+      final mediaService = MediaService();
+      final response = await mediaService.fetchMediaAlbumById(widget.albumId);
+      final media = response['media'];
+
+      setState(() {
+        _mediaItems = List<Map<String, dynamic>>.from(media);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching media: $e');
+      setState(() {
+        _isLoading = false;
+        _hasError = true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
+      appBar: AppBar(title: Text(widget.title)),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, // Display 3 items per row
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-          ),
-          itemCount: galleryItems.length + 1, // Extra slot for the "Add" button
-          itemBuilder: (context, index) {
-            if (index == galleryItems.length) {
-              // "Add" button at the end of the grid
-              return InkWell(
-                onTap: () {
-                  _addImageOrVideo(context);
-                },
-                child: Container(
-                  color: Colors.grey.shade300,
-                  child: const Icon(
-                    Icons.add,
-                    size: 36,
-                    color: Colors.grey,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _hasError
+                ? const Center(child: Text('Failed to load media'))
+                : GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                    itemCount: _mediaItems.length,
+                    itemBuilder: (context, index) {
+                      final item = _mediaItems[index];
+                      final String mediaUrl = item['media_url'] ?? '';
+                      final String thumbnailUrl = item['thumbnail_url'] ?? 'https://via.placeholder.com/150';
+                      final String mediaType = item['media_type'] ?? '';
+                      final String title = item['title'] ?? '';
+
+                      final isImage = mediaType == 'image';
+                      final isVideo = mediaType == 'embed';
+
+                      return GestureDetector(
+                        onTap: () {
+                          if (isImage) {
+                            _viewImage(context, title, mediaUrl);
+                          } else if (isVideo) {
+                            _viewVideo(context, mediaUrl);
+                          }
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: isImage
+                              ? Image.network(
+                                  thumbnailUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Image.asset(
+                                      'assets/gallery.jpeg',
+                                      fit: BoxFit.cover,
+                                    );
+                                  },
+                                )
+                              : Stack(
+                                  children: [
+                                    Image.network(
+                                      thumbnailUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/gallery.jpeg',
+                                          fit: BoxFit.cover,
+                                        );
+                                      },
+                                    ),
+                                    Container(
+                                      color: Colors.black.withOpacity(0.5),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.play_circle_outline,
+                                          size: 50,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              );
-            } else {
-              // Display each image/video item in the grid
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  galleryItems[index],
-                  fit: BoxFit.cover,
-                ),
-              );
-            }
-          },
-        ),
       ),
     );
   }
 
-  // Method to handle adding an image or video from the phone gallery
-  void _addImageOrVideo(BuildContext context) {
-    // Show an action to pick an image or video
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.image),
-              title: const Text('Add Image'),
-              onTap: () {
-                // Handle image selection from phone gallery
-                Navigator.pop(context); // Close the bottom sheet
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.video_library),
-              title: const Text('Add Video'),
-              onTap: () {
-                // Handle video selection from phone gallery
-                Navigator.pop(context); // Close the bottom sheet
-              },
-            ),
-          ],
-        );
-      },
+Future<void> _viewImage(BuildContext context, String title, String imageUrl) async {
+  final String apiKey = dotenv.env['CLIENT_ID'] ?? '7887150025286687';
+  final accessToken = await _secureStorage.read(key: 'accessToken');
+
+  final headers = {'Authorization': 'Bearer $accessToken', 'x-api-key': apiKey};
+
+  // Show loading dialog
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return const Center(child: CircularProgressIndicator());
+    },
+  );
+
+  try {
+    final response = await http.get(Uri.parse(imageUrl), headers: headers);
+
+    Navigator.pop(context); // Dismiss the loading dialog
+
+    if (response.statusCode == 200) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ImageViewer(title: title, imageBytes: response.bodyBytes),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load image: ${response.statusCode}')),
+      );
+    }
+  } catch (e) {
+    Navigator.pop(context); // Dismiss the loading dialog
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+  }
+}
+
+  void _viewVideo(BuildContext context, String videoUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => VideoPlayerScreen(videoUrl: videoUrl)),
     );
   }
 }

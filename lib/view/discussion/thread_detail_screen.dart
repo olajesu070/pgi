@@ -1,14 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class ThreadDetailScreen extends StatefulWidget {
-  final String viewUrl;
 
   const ThreadDetailScreen({
     super.key,
-    required this.viewUrl,
   });
 
   @override
@@ -17,6 +16,7 @@ class ThreadDetailScreen extends StatefulWidget {
 
 class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
   late final WebViewController _controller;
+  final String viewUrl = dotenv.env['WHOVA_URL'] ?? 'https://pgi.org';
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(widget.viewUrl));
+      ..loadRequest(Uri.parse(viewUrl));
 
     // Set WebView background color
     if (!Platform.isMacOS) {
@@ -73,16 +73,8 @@ class _ThreadDetailScreenState extends State<ThreadDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thread Details'),
+        title: const Text('Schedule'),
         backgroundColor: const Color(0xCC0A5338),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () {
-              Navigator.pop(context); // Close the ThreadDetailScreen
-            },
-          ),
-        ],
       ),
       body: WebViewWidget(controller: _controller),
     );

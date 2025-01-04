@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'dart:developer' as developer;
 import 'dart:io';
 
 class XenForoUserApi {
@@ -16,6 +17,8 @@ class XenForoUserApi {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
+      developer.log(response.body);
+       debugPrint('user info: ${response.body}');
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed with status code: ${response.statusCode}');

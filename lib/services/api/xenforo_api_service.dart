@@ -39,7 +39,7 @@ Future<Map<String, dynamic>> getForumThreads() async {
         )
         .timeout(const Duration(seconds: 10)); // Handle unresponsive API
 
-    debugPrint('Response status code: ${response.statusCode}');
+    // debugPrint('Response status code: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty) {

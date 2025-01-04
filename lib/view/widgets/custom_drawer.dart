@@ -1,40 +1,52 @@
 import 'package:flutter/material.dart';
 
 class CustomDrawer extends StatelessWidget {
-  final String membershipType; // Type of membership (e.g., "Guest", "Premium")
+  final Map<String, dynamic> userDetails;
 
   const CustomDrawer({
     super.key,
-    this.membershipType = "Guest", // Default to "Guest" if not specified
+    required this.userDetails,
   });
 
   @override
   Widget build(BuildContext context) {
+    final String firstName = userDetails['me']['custom_fields']['firstname'] ?? '';
+    final String lastName = userDetails['me']['custom_fields']['lastname'] ?? '';
+    final String email = userDetails['me']['email'] ?? '';
+    final String userName = '$firstName $lastName';
+    final String avatarUrl = userDetails['me']['avatar_urls']['o'] ?? 'https://picsum.photos/200/300';
+    final String membershipType = userDetails['membershipType'] ?? 'Guest';
+    final bool isActiveMember = userDetails['me']['activity_visible'] ?? false;
     return Drawer(
       backgroundColor: const Color(0xFFFFFFFF),
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-          const DrawerHeader(
-            decoration: BoxDecoration(
-              color: Color(0xFFFFFFFF),
-            ),
+        DrawerHeader(
+          decoration: const BoxDecoration(
+            color: Color(0xFFFFFFFF),
+          ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CircleAvatar(
                   radius: 40,
-                  backgroundImage: NetworkImage('https://picsum.photos/200/300'),
+                  backgroundImage: NetworkImage(avatarUrl),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
-                  'Logan Moore',
-                  style: TextStyle(color: Color(0xFF000000), fontSize: 20),
+                  userName,
+                  style: const TextStyle(
+                    color: Color(0xFF000000),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
-          ),
-          // My Profile tile with padding and background color
+        ),
+
+          // My Profile tile
           Container(
             color: Colors.white,
             child: ListTile(
@@ -47,8 +59,7 @@ class CustomDrawer extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10), // Space between tiles
-
-          // Messages tile with padding and background color
+            // Messages tile with padding and background color
           Container(
             color: Colors.white,
             child: ListTile(
@@ -88,9 +99,7 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 10), // Space between tiles
-
-          // Sign Out tile
+           // Sign Out tile
           Container(
             color: Colors.white,
             child: ListTile(
@@ -102,25 +111,49 @@ class CustomDrawer extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(height: 20), // Space before membership label
+          const SizedBox(height: 20), 
 
-          // Membership label at the bottom of the drawer
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Align(
-              alignment: Alignment.bottomLeft,
-              child: Text(
-                membershipType,
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+          // Membership label
+          Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xE0BDEC66),
+                  borderRadius: BorderRadius.circular(0),
+                ),
+                child: Text(
+                  isActiveMember ? 'Active PGI Member' : 'Guest',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
               ),
-            ),
-          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatItem(String label, int value) {
+    return Column(
+      children: [
+        Text(
+          value.toString(),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }

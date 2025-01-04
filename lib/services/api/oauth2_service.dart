@@ -76,7 +76,7 @@ class OAuth2Service {
   }
 
   Future<void> _updateTokensAndNavigate(
-      String accessToken, String refreshToken, String expirationDate, BuildContext context) async {
+    String accessToken, String refreshToken, String expirationDate, BuildContext context) async {
     await secureStorage.write(key: 'accessToken', value: accessToken);
     await secureStorage.write(key: 'refreshToken', value: refreshToken);
     await secureStorage.write(key: 'expirationDate', value: expirationDate);
@@ -163,45 +163,31 @@ class OAuth2Service {
       final expiresIn = responseData['expires_in'];
       final expirationDate = DateTime.now().add(Duration(seconds: expiresIn)).toIso8601String();
 
-      await secureStorage.write(key: 'accessToken', value: accessToken);
-      await secureStorage.write(key: 'refreshToken', value: newRefreshToken);
-      await secureStorage.write(key: 'expirationDate', value: expirationDate);
-
-      onTokensUpdated();
+      await _updateTokensAndNavigate(accessToken, refreshToken, expirationDate, context);
     } else {
       throw Exception('Failed to refresh access token');
     }
   }
 
   Future<void> ensureValidAccessToken(BuildContext context) async {
+    final accessToken = await secureStorage.read(key: 'accessToken');
+    final refreshToken = await secureStorage.read(key: 'refreshToken');
     final expirationDateStr = await secureStorage.read(key: 'expirationDate');
     if (expirationDateStr != null) {
       final expirationDate = DateTime.parse(expirationDateStr);
       if (DateTime.now().isAfter(expirationDate)) {
         await refreshAccessToken(context);
+      }else {
+        navigateToHome(context);
       }
     } else {
-      await refreshAccessToken(context);
+     if (expirationDateStr != null) {
+       await _updateTokensAndNavigate(accessToken!, refreshToken!, expirationDateStr, context);
+     } else {
+       throw Exception('Expiration date is null');
+     }
+
     }
   }
 
-  // Future<void> makeAuthenticatedApiCall(BuildContext context) async {
-  //   await ensureValidAccessToken(context);
-
-  //   final accessToken = await secureStorage.read(key: 'accessToken');
-  //   final headers = {
-  //     'Authorization': 'Bearer $accessToken',
-  //   };
-
-  //   final response = await http.get(
-  //     Uri.parse('https://example.com/protected-endpoint'),
-  //     headers: headers,
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     print('API call successful: ${response.body}');
-  //   } else {
-  //     print('API call failed: ${response.body}');
-  //   }
-  // }
 }

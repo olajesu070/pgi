@@ -3,13 +3,16 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pgi/core/constants/app_colors.dart';
+import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/services/api/xenforo_api_service.dart';
+import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/discussion/discussion.dart';
 import 'package:pgi/view/widgets/custom_drawer.dart';
 import 'package:pgi/view/widgets/edge_button.dart';
 import 'package:pgi/view/widgets/event_cards.dart';
 import 'package:pgi/view/widgets/post_cards.dart';
 import 'package:pgi/view/widgets/section_widget.dart';
+import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final XenForoApiService apiService = XenForoApiService();
+  final XenForoUserApi userApiService = XenForoUserApi();
 
   List<Map<String, dynamic>> discussions = [];
   List<Map<String, dynamic>> events = []; // Add events list
@@ -30,6 +34,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchDiscussions();
+    // Fetch user details on page load
+    Provider.of<UserState>(context, listen: false).fetchUserDetails();
   }
 
   Future<void> _fetchDiscussions() async {
@@ -62,8 +68,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final userState = Provider.of<UserState>(context);
+
+    final userDetails = userState.userDetails!;
     return Scaffold(
-      drawer: const CustomDrawer(membershipType: "Premium"),
+      drawer: CustomDrawer(userDetails: userDetails,),
       body: Stack(
         children: [
           Container(color: const Color(0xFFFFFFFF)),
@@ -99,6 +108,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final userState = Provider.of<UserState>(context);
+
+    final userDetails = userState.userDetails!;
     return Positioned(
       top: 0,
       left: 0,
@@ -134,10 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 GestureDetector(
                   onTap: () {},
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Row(
+                      const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
@@ -151,10 +163,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           Icon(Icons.arrow_drop_down, size: 20, color: Colors.white),
                         ],
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Florida, USA',
-                        style: TextStyle(fontSize: 14, color: Colors.white),
+                        '${userDetails['me']['custom_fields']['city'] }',
+                        style: const TextStyle(fontSize: 14, color: Colors.white,),
                       ),
                     ],
                   ),

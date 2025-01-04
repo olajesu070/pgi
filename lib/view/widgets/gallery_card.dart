@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 
 class GalleryCard extends StatelessWidget {
-  final String imageUrl;
-  final String title;
-  final int pictureCount;
-  final int videoCount;
+  final String imageUrl; // Thumbnail URL
+  final String title; // Title of the gallery/album
+  final String avatarUrl; // User's avatar URL
+  final String username; // Author's username
+  final int mediaCount; // Number of media items
+  final int viewCount; // View count
   final VoidCallback onTap; // Callback to handle the tap event
 
   const GalleryCard({
     super.key,
     required this.imageUrl,
     required this.title,
-    required this.pictureCount,
-    required this.videoCount,
-    required this.onTap, // Pass the onTap callback
+    required this.avatarUrl,
+    required this.username,
+    required this.mediaCount,
+    required this.viewCount,
+    required this.onTap,
   });
 
   @override
@@ -29,7 +33,7 @@ class GalleryCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Image on the left side
+            // Thumbnail on the left side
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: Image.network(
@@ -40,11 +44,12 @@ class GalleryCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            // Text details on the right side
+            // Text details in the center
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title
                   Text(
                     title,
                     style: const TextStyle(
@@ -53,21 +58,41 @@ class GalleryCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
+                  // Media count and view count
                   Row(
                     children: [
                       Text(
-                        '$pictureCount Pictures',
+                        '$mediaCount files',
                         style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '$videoCount Videos',
+                        '$viewCount Views',
                         style: const TextStyle(fontSize: 14, color: Colors.grey),
                       ),
                     ],
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 16),
+            // User avatar and username
+            Column(
+              children: [
+                CircleAvatar(
+                  backgroundImage: NetworkImage(avatarUrl),
+                  radius: 20,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  username,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
