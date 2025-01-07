@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:pgi/view/misc/create_event_screen.dart';
-import 'package:pgi/view/widgets/custom_button.dart';
-import 'package:pgi/view/widgets/schedule_card.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:pgi/services/api/xenforo_event_service.dart';
+import 'package:intl/intl.dart'; // For date formatting
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -12,130 +12,157 @@ class ScheduleScreen extends StatefulWidget {
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
   bool isUpcomingSelected = true; // Tracks which tab is selected
+  List<dynamic> events = [];
+  final XenforoEventService eventService = XenforoEventService();
+   int _currentPage = 1;
+  int _totalPages = 1;
+   bool _isLoading = false;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Schedule'),
-      ),
-      body: Column(
-        children: [
-          // Toggle Buttons for "UPCOMING" and "MY SCHEDULE"
-          Padding(
+  void initState() {
+    super.initState();
+    _fetchEvents();
+  }
+
+  Future<void> _fetchEvents() async {
+    if (_isLoading || _currentPage > _totalPages) return; // Prevent extra calls
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await eventService.fetchEvents(page: _currentPage);
+      final fetchedEvents = response['events'] as List<dynamic>;
+      final pagination = response['pagination'];
+      
+      setState(() {
+        events.addAll(fetchedEvents);
+        _currentPage = pagination['current_page'] + 1;
+        _totalPages = pagination['last_page'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching events: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      automaticallyImplyLeading: false,
+      title: const Text('Events'),
+    ),
+    body: Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildToggleButton('UPCOMING', isUpcomingSelected),
-                const SizedBox(width: 16),
-                _buildToggleButton('MY SCHEDULE', !isUpcomingSelected),
-              ],
-            ),
+            itemCount: events.length + 1,
+            itemBuilder: (context, index) {
+              if (index == events.length) {
+                if (_isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (_currentPage <= _totalPages) {
+                  SchedulerBinding.instance.addPostFrameCallback((_) {
+                    _fetchEvents();  // This will be triggered after the current frame completes
+                  });
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text('Loading more events...'),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink(); // End of list
+              }
+              final event = events[index];
+              return _buildEventCard(event);
+            },
           ),
-          Expanded(
-            child: ListView(
-              children: [
-                _buildEventCards(isUpcomingSelected ? upcomingEvents : myScheduleEvents),
-                _buildAddEventButton(),
-              ],
+        ),
+      ],
+    ),
+  );
+}
+
+  Widget _buildEventCard(Map<String, dynamic> event) {
+    final eventTitle = event['title'] ?? 'No Title';
+    final eventOrganizer = event['username'] ?? 'Unknown';
+    final eventStartDate = DateTime.fromMillisecondsSinceEpoch(event['event_start_date'] * 1000);
+    final eventEndDate = DateTime.fromMillisecondsSinceEpoch(event['event_end_date'] * 1000);
+    final formattedDate = DateFormat.yMMMMd().format(eventStartDate);
+    final formattedEndDate = DateFormat.yMMMMd().format(eventEndDate);
+    final location = event['event_timezone'] ?? 'Location not specified';
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(15.0),
+      ),
+      elevation: 5,
+      child: InkWell(
+      borderRadius: BorderRadius.circular(15.0),
+      onTap: () {
+        // Handle event card tap for more details
+        print('Tapped on $eventTitle');
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+          eventTitle,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+          children: [
+            const Icon(Icons.person, size: 16),
+            const SizedBox(width: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+              'Organizer: $eventOrganizer',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black87,
+              ),
+              ),
             ),
+          ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+          children: [
+            const Icon(Icons.calendar_today, size: 16),
+            const SizedBox(width: 4),
+            Text('Date: ${formattedDate == formattedEndDate ? formattedDate : '$formattedDate - $formattedEndDate'}'),
+          ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+          children: [
+            const Icon(Icons.location_on, size: 16),
+            const SizedBox(width: 4),
+            Text('Location: $location'),
+          ],
           ),
         ],
-      ),
-    );
-  }
-
-  // Method to build the toggle button
-  Widget _buildToggleButton(String title, bool isSelected) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            isUpcomingSelected = title == 'UPCOMING';
-          });
-        },
-        child: Container(
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFFFFFFF) : Colors.transparent,
-            borderRadius: BorderRadius.circular(100),
-          ),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: isSelected ? const Color(0xFF0A5338) : const Color(0xFF767676),
-              fontWeight: FontWeight.bold,
-              fontSize: 15
-            ),
-          ),
         ),
       ),
-    );
-  }
-
-  // Method to display event cards
-  Widget _buildEventCards(List<Map<String, String>> events) {
-    return Column(
-      children: events.map((event) => ScheduleCard(event)).toList(),
-    );
-  }
-
-  // "Add Event" Button
-  Widget _buildAddEventButton() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: CustomButton(
-        label: 'Add Event',
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateEventScreen()), // Make sure you import the PostThreadScreen
-          );
-        },
-        // color: Colors.blue,
-        textColor: Colors.white,
-        ),
+      ),
     );
   }
 }
-
-
-
-
-// Sample data for Upcoming and My Schedule events
-final List<Map<String, String>> upcomingEvents = [
-  {
-    'imageUrl': 'https://picsum.photos/80/80?random=1',
-    'date': 'Dec 12',
-    'time': '10:00 AM',
-    'title': 'Tech Conference',
-    'location': 'New York, NY',
-  },
-  {
-    'imageUrl': 'https://picsum.photos/80/80?random=2',
-    'date': 'Dec 15',
-    'time': '3:00 PM',
-    'title': 'Music Festival',
-    'location': 'Los Angeles, CA',
-  },
-];
-
-final List<Map<String, String>> myScheduleEvents = [
-  {
-    'imageUrl': 'https://picsum.photos/80/80?random=3',
-    'date': 'Jan 5',
-    'time': '9:00 AM',
-    'title': 'Yoga Workshop',
-    'location': 'Chicago, IL',
-  },
-  {
-    'imageUrl': 'https://picsum.photos/80/80?random=4',
-    'date': 'Jan 20',
-    'time': '1:00 PM',
-    'title': 'Business Seminar',
-    'location': 'San Francisco, CA',
-  },
-];

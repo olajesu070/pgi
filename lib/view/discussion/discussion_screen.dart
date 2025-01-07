@@ -57,20 +57,20 @@ Widget build(BuildContext context) {
     appBar: AppBar(
       automaticallyImplyLeading: false,
       title: const Text('Discussions'),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.search),
-          onPressed: () {
-            // Handle search action
-          },
-        ),
-        IconButton(
-          icon: const Icon(Icons.more_vert),
-          onPressed: () {
-            // Handle more options action
-          },
-        ),
-      ],
+      // actions: [
+      //   IconButton(
+      //     icon: const Icon(Icons.search),
+      //     onPressed: () {
+      //       // Handle search action
+      //     },
+      //   ),
+      //   IconButton(
+      //     icon: const Icon(Icons.more_vert),
+      //     onPressed: () {
+      //       // Handle more options action
+      //     },
+      //   ),
+      // ],
     ),
     body: Padding(
       padding: const EdgeInsets.all(16.0),

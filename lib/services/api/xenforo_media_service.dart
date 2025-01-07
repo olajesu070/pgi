@@ -16,7 +16,6 @@ class MediaService {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
-      developer.log(response.body);
       //  debugPrint('user info: ${response.body}');
       return jsonDecode(response.body);
     } else {

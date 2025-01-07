@@ -17,8 +17,7 @@ class XenForoUserApi {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
-      developer.log(response.body);
-       debugPrint('user info: ${response.body}');
+      //  debugPrint('user info: ${response.body}');
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed with status code: ${response.statusCode}');
@@ -142,4 +141,27 @@ class XenForoUserApi {
       rethrow;
     }
   }
+
+/// Fetch information about a specific user by ID
+Future<Map<String, dynamic>> getUserInfoById(int userId, {bool withPosts = false, int page = 1}) async {
+  final url = Uri.parse('$baseUrl/users/$userId?with_posts=$withPosts&page=$page');
+  final accessToken = await _secureStorage.read(key: 'accessToken');
+
+  try {
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'XF-Api-Key': apiKey,
+        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      },
+    );
+    return await _handleResponse(response);
+  } catch (e) {
+    debugPrint('Error fetching user info by ID: $e');
+    rethrow;
+  }
+}
+
+
 }

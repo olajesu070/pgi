@@ -64,10 +64,10 @@ Future<void> logResponseToFile(String responseBody) async {
   // Process API response
   Map<String, dynamic> _processResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      // logResponseToFile(response.body);
+      // debugPrint('thread info: ${response.body}');
       return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to connect to API: ${response.body}');
+      throw Exception('Failed to connect to API: ${response.body}${response.body}');
     }
   }
 
@@ -178,5 +178,43 @@ Future<void> logResponseToFile(String responseBody) async {
       if (starterAlertReason != null) 'starter_alert_reason': starterAlertReason,
     };
     return await _post('threads/$threadId/move', body);
+  }
+
+//  /posts/
+// Adds a new reply to a thread.
+  Future<Map<String, dynamic>> addReply({
+    required int threadId,
+    required String message,
+    String? attachmentKey,
+  }) async {
+    final body = {
+      'thread_id': threadId,
+      'message': message,
+      if (attachmentKey != null) 'attachment_key': attachmentKey,
+    };
+    debugPrint('reply info: $body');
+    return await _post('posts/', body);
+  }
+  
+
+//   GET posts/{id}/
+// Gets information about the specified post.
+  Future<Map<String, dynamic>> getPostById(int id) async {
+    return await _get('posts/$id/');
+  }
+
+//   POST posts/{id}/vote
+// Votes on the specified post (if applicable)
+// Parameters
+// Input	Type	Description
+// type	string	 Type of vote, "up" or "down". Use the current type to undo.
+  Future<Map<String, dynamic>> voteOnPost({
+    required int postId,
+    required String type,
+  }) async {
+    final body = {
+      'type': type,
+    };
+    return await _post('posts/$postId/vote', body);
   }
 }

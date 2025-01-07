@@ -1,133 +1,159 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/message/chatscreen.dart';
+import 'package:pgi/view/message/create_message.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class OrganizerDetailsScreen extends StatelessWidget {
-  final String organizerName;
+class OrganizerDetailsScreen extends StatefulWidget {
+  final int userId;
 
-  const OrganizerDetailsScreen({super.key, required this.organizerName});
+  const OrganizerDetailsScreen({super.key, required this.userId});
+
+  @override
+  State<OrganizerDetailsScreen> createState() => _OrganizerDetailsScreenState();
+}
+
+class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
+  final XenForoUserApi userService = XenForoUserApi();
+  Map<String, dynamic>? _userDetails;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    getUserById();
+  }
+
+  Future<void> getUserById() async {
+    try {
+      final user = await userService.getUserInfoById(widget.userId);
+      setState(() {
+        _userDetails = user;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching user: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_userDetails == null) {
+      return const Center(child: Text('Failed to load user details.'));
+    }
+
+    final user = _userDetails!['user'];
+    final avatarUrl = user['avatar_urls']['o'] ?? 'https://picsum.photos/201/200';
+    final bannerUrl = user['profile_banner_urls']['l'] ?? 'https://picsum.photos/201/300';
+    final fullName = '${user['custom_fields']['firstname']} ${user['custom_fields']['lastname']}';
+    final nickname = user['custom_fields']['pgi_nickname'] ?? 'No nickname';
+    final isStaff = user['is_staff'] ? 'Staff Member' : 'Member';
+    final website = user['website'] ?? '';
+    final messageCount = user['message_count'] ?? 0;
+    final reactionScore = user['reaction_score'] ?? 0;
+    final trophyPoints = user['trophy_points']  ?? 0;
+    final questionSolutionCount = user['question_solution_count'] ?? 0;
+    final voteScore = user['vote_score'] ?? 0;
+    final about = user['about'] ?? 'No about information provided.';
+
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        // title: Text(organizerName),
+        title: Text('User Details'),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // User Avatar Section
-            const Padding(
-              padding: EdgeInsets.only(top: 16.0),
-              child: CircleAvatar(
-                radius: 96, // Avatar size
-                backgroundImage: NetworkImage(
-                    'https://picsum.photos/202'), // Placeholder image
-              ),
-            ),
-            const SizedBox(height: 8),
-            // User Name Section
-            Text(
-              organizerName,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Numbered Sections (Media, Reactions, Points)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-               children: [
-              _buildColumn('Media', '10'),
-              const Divider(
-                height: 20.0,
-                color: Colors.grey,
-                indent: 10.0,
-                endIndent: 10.0,
-              ),
-              _buildColumn('Reactions', '200'),
-              const Divider(
-                height: 20.0,
-                color: Colors.grey,
-                indent: 10.0,
-                endIndent: 10.0,
-              ),
-              _buildColumn('Points', '500'),
-            ],
-
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Follow and Message Buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                 CustomButton(
-                  label: 'Follow',
-                  width: 154,
-                  onPressed: () {
-                    // Handle follow action
-                  },
-                  // color: Colors.blue,
-                  textColor: Colors.white,
+            Stack(
+              children: [
+                Image.network(
+                  bannerUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                 ),
-                  const SizedBox(width: 16),
-                  CustomButton(
-                  label: 'Message',
-                  width: 154,
-                  isOutlined: true,
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatPage(title: 'Chat with $organizerName'),
-                        ),
-                      );
-                  },
+                Positioned(
+                  top: 100,
+                  left: 16,
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: NetworkImage(avatarUrl),
+                  ),
                 ),
-                ],
-              ),
+              ],
             ),
             const SizedBox(height: 20),
-            // Tab Bar Section
-            const DefaultTabController(
-              length: 3,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tabs
-                  TabBar(
-                    tabs: [
-                      Tab(text: 'ABOUT'),
-                      Tab(text: 'EVENTS'),
-                      Tab(text: 'REVIEWS'),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 400, // Adjust based on content
-                    child: TabBarView(
-                      children: [
-                        // About Tab Content
-                        Center(child: Text('About Content')),
-                        // Events Tab Content
-                        Center(child: Text('Events Content')),
-                        // Reviews Tab Content
-                        Center(child: Text('Reviews Content')),
-                      ],
+            Card(
+              margin: const EdgeInsets.all(16.0),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              elevation: 4.0,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Column(
+                        children: [
+                          Text(
+                            fullName,
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          ),
+                          Text('@$nickname • $isStaff', style: const TextStyle(color: Colors.grey)),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    _buildPointTag('Message Count', messageCount.toString(), Colors.blue),
+                    _buildPointTag('Reaction Score', reactionScore.toString(), Colors.green),
+                    _buildPointTag('Trophy Points', trophyPoints.toString(), Colors.orange),
+                    _buildPointTag('Question Solutions', questionSolutionCount.toString(), Colors.purple),
+                    _buildPointTag('Vote Score', voteScore.toString(), Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      'About',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Text(
+                      about,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 20),
+                    if (website != null && website.isNotEmpty)
+                      InkWell(
+                        onTap: () => _launchURL(website),
+                        child: Text(
+                          website,
+                          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    const SizedBox(height: 20),
+                    CustomButton(
+                      label: 'Message',
+                      padding: 5.0,
+                      onPressed: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CreateMessageScreen(
+                                recipientId: widget.userId,
+                              ),
+                            ),
+                          );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -136,26 +162,37 @@ class OrganizerDetailsScreen extends StatelessWidget {
     );
   }
 
-  // Helper method to build each column (Media, Reactions, Points)
-  Widget _buildColumn(String title, String count) {
-    return Column(
-      children: [
-        Text(
-          count,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
+  Widget _buildPointTag(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: color, fontWeight: FontWeight.bold),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(color: color, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  Future<void> _launchURL(String url) async {
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
   }
 }

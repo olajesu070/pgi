@@ -93,6 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final String lastName = userDetails?['me']['custom_fields']['lastname'] ?? '';
     final String email = userDetails?['me']['email'] ?? '';
     final String about = userDetails?['me']['about'] ?? '';
+    final String avatarUrl = userDetails?['me']['avatar_urls']['s'] ?? 'https://picsum.photos/212';
 
     // Initialize fields if not set
     if (_firstname.isEmpty && _lastname.isEmpty && _email.isEmpty && _bio.isEmpty) {
@@ -130,7 +131,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           radius: 50,
                           backgroundImage: _selectedImage != null
                               ? FileImage(_selectedImage!)
-                              : const NetworkImage('https://picsum.photos/212')
+                              :NetworkImage(avatarUrl)
                                   as ImageProvider,
                           child: _selectedImage == null
                               ? const Icon(Icons.edit, size: 30, color: Colors.white)

@@ -194,10 +194,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PolicyScreen(
-                                title: 'PGI Bylaws', // Example title
-                                policyContent: 'Here goes the privacy policy content... This can be a long text.',
-                              ),
+                              builder: (context) => const PrivacyPolicyScreen(),
                             ),
                           );
 
@@ -229,10 +226,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PolicyScreen(
-                                title: 'Terms', // Example title
-                                policyContent: 'Here goes the privacy policy content... This can be a long text.',
-                              ),
+                             builder: (context) => const PrivacyPolicyScreen(),
                             ),
                           );
 
@@ -248,10 +242,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const PolicyScreen(
-                                title: 'Privacy Policy', // Example title
-                                policyContent: 'Here goes the privacy policy content... This can be a long text.',
-                              ),
+                             builder: (context) => const PrivacyPolicyScreen(),
                             ),
                           );
 

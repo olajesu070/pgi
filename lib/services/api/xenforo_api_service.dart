@@ -11,6 +11,7 @@ class XenForoApiService {
   final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://pgi.org/api';
   final String apiKey = dotenv.env['CLIENT_ID'] ?? '7887150025286687';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+ 
 
 Future<void> logResponseToFile(String responseBody) async {
   final directory = await getApplicationDocumentsDirectory();
@@ -21,6 +22,7 @@ Future<void> logResponseToFile(String responseBody) async {
 
   /// Fetch forum threads
 Future<Map<String, dynamic>> getForumThreads() async {
+
   final url = Uri.parse('$baseUrl/threads');
   final accessToken = await _secureStorage.read(key: 'accessToken');
 
@@ -63,11 +65,6 @@ Future<Map<String, dynamic>> getForumThreads() async {
 }
 
 
-  /// Logout method to clear stored tokens
-  Future<void> logout() async {
-    developer.log('Logging out: Clearing access token');
-    await _secureStorage.delete(key: 'accessToken');
-  }
 
   // Add more methods for other API endpoints as needed
 }

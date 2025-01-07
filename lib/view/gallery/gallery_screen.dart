@@ -56,37 +56,39 @@ class _GalleryScreenState extends State<GalleryScreen> {
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : mediaAlbums.isEmpty
-              ? const Center(
-                  child: Text('No albums available.'),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: mediaAlbums.length,
-                  itemBuilder: (context, index) {
-                    final album = mediaAlbums[index];
-                    return GalleryCard(
-                      imageUrl: album['thumbnail_url'] ?? 'https://via.placeholder.com/150',
-                      title: album['title'] ?? 'Untitled Album',
-                      avatarUrl: album['User']?['avatar_urls']?['s'] ?? 'https://via.placeholder.com/50',
-                      username: album['username'] ?? 'Unknown User',
-                      mediaCount: album['media_count'] ?? 0,
-                      viewCount: album['view_count'] ?? 0,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => GalleryDetailScreen(title: album['title'], albumId: album['album_id']),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+      body: SafeArea(
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : mediaAlbums.isEmpty
+                ? const Center(
+                    child: Text('No albums available.'),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: mediaAlbums.length,
+                    itemBuilder: (context, index) {
+                      final album = mediaAlbums[index];
+                      return GalleryCard(
+                        imageUrl: album['thumbnail_url'] ?? 'https://via.placeholder.com/150',
+                        title: album['title'] ?? 'Untitled Album',
+                        avatarUrl: album['User']?['avatar_urls']?['s'] ?? 'https://via.placeholder.com/50',
+                        username: album['username'] ?? 'Unknown User',
+                        mediaCount: album['media_count'] ?? 0,
+                        viewCount: album['view_count'] ?? 0,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => GalleryDetailScreen(title: album['title'], albumId: album['album_id']),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+      ),
     );
   }
 }

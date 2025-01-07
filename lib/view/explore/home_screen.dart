@@ -1,15 +1,17 @@
 import 'dart:math';
+import 'package:intl/intl.dart';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:pgi/core/constants/app_colors.dart';
 import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/services/api/xenforo_api_service.dart';
+import 'package:pgi/services/api/xenforo_event_service.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/discussion/discussion.dart';
 import 'package:pgi/view/widgets/custom_drawer.dart';
 import 'package:pgi/view/widgets/edge_button.dart';
 import 'package:pgi/view/widgets/event_cards.dart';
+import 'package:pgi/view/misc/notification_screen.dart';
 import 'package:pgi/view/widgets/post_cards.dart';
 import 'package:pgi/view/widgets/section_widget.dart';
 import 'package:provider/provider.dart';
@@ -23,10 +25,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final XenForoApiService apiService = XenForoApiService();
+  final XenforoEventService eventService = XenforoEventService();
   final XenForoUserApi userApiService = XenForoUserApi();
 
   List<Map<String, dynamic>> discussions = [];
-  List<Map<String, dynamic>> events = []; // Add events list
+  List<dynamic> events = [];
   bool isLoading = true;
   String errorMessage = '';
 
@@ -34,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchDiscussions();
+    _fetchEvents();
     // Fetch user details on page load
     Provider.of<UserState>(context, listen: false).fetchUserDetails();
   }
@@ -48,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final data = await apiService.getForumThreads();
 
       setState(() {
-        if (data['threads'] == null || data['threads'].isEmpty) {
+        if (data['threads'].isEmpty) {
           discussions = [];
           errorMessage = 'No discussions available at the moment.';
         } else {
@@ -64,6 +68,19 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _fetchEvents() async {
+    try {
+      final response = await eventService.fetchEvents();
+      final fetchedEvents = response['events'] as List<dynamic>;
+
+      setState(() {
+        events.addAll(fetchedEvents);
+      });
+    } catch (e) {
+      print('Error fetching events: $e');
+    }
+  }
+
  
 
   @override
@@ -73,36 +90,39 @@ class _HomeScreenState extends State<HomeScreen> {
     final userDetails = userState.userDetails!;
     return Scaffold(
       drawer: CustomDrawer(userDetails: userDetails,),
-      body: Stack(
-        children: [
-          Container(color: const Color(0xFFFFFFFF)),
-          _buildHeader(context),
-          _buildEdgeButtons(),
-          Padding(
-            padding: const EdgeInsets.only(top: 240), // Adjust based on overlay height
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      SectionWidget(
-                        title: 'Upcoming Events',
-                        actionText: 'See All',
-                        content: _buildEventCards(),
-                      ),
-                      SectionWidget(
-                        title: 'Latest Posts',
-                        actionText: '',
-                        content: _buildPostCards(context),
-                      ),
-                    ]),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Container(color: const Color(0xFFFFFFFF)),
+            _buildHeader(context),
+            _buildEdgeButtons(),
+            Padding(
+              padding: const EdgeInsets.only(top: 150), // Adjust based on overlay height
+              child: CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        SectionWidget(
+                          title: 'Upcoming Events',
+                          actionText: 'See All',
+                          onTap: () => Navigator.pushNamed(context, '/schedule'),
+                          content: _buildEventCards(),
+                        ),
+                        SectionWidget(
+                          title: 'Latest Posts',
+                          actionText: '',
+                          content: _buildPostCards(context),
+                        ),
+                      ]),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -133,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Column(
           children: [
-            const SizedBox(height: 14),
+            // const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -160,79 +180,88 @@ class _HomeScreenState extends State<HomeScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Icon(Icons.arrow_drop_down, size: 20, color: Colors.white),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${userDetails['me']['custom_fields']['city'] }',
+                        '${toBeginningOfSentenceCase<String?>(userDetails['me']['custom_fields']['city'])}',
                         style: const TextStyle(fontSize: 14, color: Colors.white,),
                       ),
                     ],
                   ),
                 ),
-                const CircleAvatar(
+                GestureDetector(
+                  onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                    builder: (context) => NotificationScreen(),
+                    ),
+                  );
+                  },
+                  child: const CircleAvatar(
                   backgroundColor: Color(0x49FFFFFF),
                   child: Icon(Icons.notifications_none, color: Colors.white),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search...',
-                      hintStyle: const TextStyle(color: Colors.white),
-                      prefixIcon: const Icon(Icons.search, color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.transparent,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    backgroundColor: const Color(0xFF0A5338),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        padding: const EdgeInsets.all(5),
-                        child: const Icon(
-                          Icons.filter_list,
-                          color: Color(0xFF0A5338),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      const Text(
-                        'Filter',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+            // Row(
+            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //   children: [
+            //     // Expanded(
+            //     //   child: TextField(
+            //     //     decoration: InputDecoration(
+            //     //       hintText: 'Search...',
+            //     //       hintStyle: const TextStyle(color: Colors.white),
+            //     //       prefixIcon: const Icon(Icons.search, color: Colors.white),
+            //     //       filled: true,
+            //     //       fillColor: Colors.transparent,
+            //     //       border: OutlineInputBorder(
+            //     //         borderRadius: BorderRadius.circular(30),
+            //     //         borderSide: BorderSide.none,
+            //     //       ),
+            //     //       contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            //     //     ),
+            //     //     style: const TextStyle(color: Colors.white),
+            //     //   ),
+            //     // ),
+            //     // const SizedBox(width: 10),
+            //     // ElevatedButton(
+            //     //   onPressed: () {},
+            //     //   style: ElevatedButton.styleFrom(
+            //     //     shape: RoundedRectangleBorder(
+            //     //       borderRadius: BorderRadius.circular(30),
+            //     //     ),
+            //     //     backgroundColor: const Color(0xFF0A5338),
+            //     //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            //     //   ),
+            //     //   child: Row(
+            //     //     mainAxisSize: MainAxisSize.min,
+            //     //     children: [
+            //     //       Container(
+            //     //         decoration: const BoxDecoration(
+            //     //           color: Colors.white,
+            //     //           shape: BoxShape.circle,
+            //     //         ),
+            //     //         padding: const EdgeInsets.all(5),
+            //     //         child: const Icon(
+            //     //           Icons.filter_list,
+            //     //           color: Color(0xFF0A5338),
+            //     //           size: 20,
+            //     //         ),
+            //     //       ),
+            //     //       const SizedBox(width: 5),
+            //     //       const Text(
+            //     //         'Filter',
+            //     //         style: TextStyle(color: Colors.white),
+            //     //       ),
+            //     //     ],
+            //     //   ),
+            //     // ),
+            //   ],
+            // ),
           ],
         ),
       ),
@@ -241,15 +270,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildEdgeButtons() {
     return const Positioned(
-      top: 165,
+      top: 100,
       left: 16,
       right: 16,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          EdgeButton(color: Color(0xFFF44336), text: 'The Guild'),
-          EdgeButton(color: Color(0xFFF59762), text: 'PGI Training'),
-          EdgeButton(color: Color(0xFF29D697), text: 'Memberships'),
+          EdgeButton(color: Color(0xFFF44336), text: 'The Guild', param: 'https://pgi.org/pages/about-the-guild/'),
+          EdgeButton(color: Color(0xFFF59762), text: 'PGI Training', param: 'https://pgi.org/pages/introduction-to-professional-use-only-products/'),
+          EdgeButton(color: Color(0xFF29D697), text: 'Memberships', param: 'https://pgi.org/pages/membership/'),
         ],
       ),
     );
@@ -264,21 +293,24 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return SizedBox(
-      height: 280,
+      height: 220,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: events.length,
+        itemCount: min(events.length, 4), // Limit to at most 4 events
         itemBuilder: (context, index) {
           final event = events[index];
           return EventCard(
-            imageUrl: event['imageUrl'],
-            date: event['date'],
-            title: event['title'],
-            attendeeAvatars: event['attendeeAvatars'],
-            location: event['location'],
-            goingCount: event['goingCount'],
-          );
+           title: event['title'] ?? 'No Title',
+            username: event['username'] ?? 'Unknown',
+            location: event['event_timezone'] ?? 'Location not specified',
+            eventStartDate: event['event_start_date'] * 1000,
+            eventEndDate: event['event_end_date'] * 1000,
+            message: event['message'] ?? 'No description provided.',
+            categoryTitle: event['Category']?['title'] ?? 'General',
+            viewCount: event['view_count'] ?? 0,
+            userId: event['user_id'],
+           );
         },
       ),
     );

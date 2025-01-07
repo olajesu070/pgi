@@ -7,6 +7,8 @@ const List<String> scopes = [
   'attachment:write',
   'conversation:read',
   'conversation:write',
+  'conversation_message:read',
+  'conversation_message:write',
   'media:read',
   'media:write',
   'media_category:read',
@@ -19,6 +21,7 @@ const List<String> scopes = [
   'thread:read',
   'user:read',
   'user:write',
+  'event:read',
 ];
 
 /// Get all scopes as a single space-separated string

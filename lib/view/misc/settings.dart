@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/view/misc/contact_screen.dart';
+import 'package:pgi/view/misc/edit_profile_screen.dart';
+import 'package:pgi/view/misc/policy.dart';
+import 'package:pgi/view/misc/terms_policy.dart';
+import 'package:pgi/view/misc/notification_screen.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -23,28 +28,37 @@ class SettingsPage extends StatelessWidget {
               icon: Icons.person,
               title: 'Edit Profile',
               onTap: () {
-                // Navigate to edit profile page
+                 Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                );
               },
             ),
-            _buildListTile(
-              icon: Icons.security,
-              title: 'Security',
-              onTap: () {
-                // Navigate to security settings page
-              },
-            ),
+            // _buildListTile(
+            //   icon: Icons.security,
+            //   title: 'Security',
+            //   onTap: () {
+            //     // Navigate to security settings page
+            //   },
+            // ),
             _buildListTile(
               icon: Icons.notifications,
               title: 'Notifications',
               onTap: () {
-                // Navigate to notifications settings page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) =>  NotificationScreen()),
+                );
               },
             ),
             _buildListTile(
               icon: Icons.lock,
               title: 'Privacy',
               onTap: () {
-                // Navigate to privacy settings page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                );
               },
             ),
           ]),
@@ -55,14 +69,20 @@ class SettingsPage extends StatelessWidget {
               icon: Icons.help,
               title: 'Help & Support',
               onTap: () {
-                // Navigate to help & support page
+               Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) =>  ContactUsScreen()),
+                );
               },
             ),
             _buildListTile(
               icon: Icons.description,
               title: 'Terms and Policies',
               onTap: () {
-                // Navigate to terms and policies page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TermsAndConditionsScreen()),
+                );
               },
             ),
           ]),
@@ -73,16 +93,19 @@ class SettingsPage extends StatelessWidget {
               icon: Icons.report_problem,
               title: 'Report a problem',
               onTap: () {
-                // Navigate to report a problem page
+                 Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) =>  ContactUsScreen()),
+                );
               },
             ),
-            _buildListTile(
-              icon: Icons.exit_to_app,
-              title: 'Log out',
-              onTap: () {
-                // Log out action
-              },
-            ),
+            // _buildListTile(
+            //   icon: Icons.exit_to_app,
+            //   title: 'Log out',
+            //   onTap: () {
+            //     // Log out action
+            //   },
+            // ),
           ]),
         ],
       ),

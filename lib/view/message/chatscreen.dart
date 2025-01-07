@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/services/api/xenforo_conversation_service.dart';
 
 class ChatPage extends StatefulWidget {
   final String title;
+  final int messsageId;
 
-  const ChatPage({super.key, required this.title});
+  const ChatPage({super.key, required this.title, required this.messsageId});
 
   @override
   _ChatPageState createState() => _ChatPageState();
@@ -11,12 +13,34 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   final TextEditingController _messageController = TextEditingController();
-  List<Map<String, String>> messages = [
-    {'sender': 'User1', 'message': 'Hey, how are you?'},
-    {'sender': 'User2', 'message': 'I am good, thanks! And you?'},
-    {'sender': 'User1', 'message': 'I am doing well.'},
-    {'sender': 'User2', 'message': 'Great to hear! Let’s catch up soon.'},
-  ];
+  final ConversationService _conversationService = ConversationService();
+   bool isLoading = true; // Loading state
+   List<dynamic> messages = [];
+
+  @override
+    void initState() {
+      super.initState();
+      _fetchChat();
+    }
+
+  void _fetchChat() async {
+    setState(() {
+      isLoading = true;
+    });
+    try {
+      final chatMessages = await _conversationService.getConversationMessageById(widget.messsageId);
+      setState(() {
+        messages = chatMessages['messages'] ?? [];
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      // Handle error appropriately
+      print('Failed to load messages: $e');
+    }
+  }
 
   void _sendMessage() {
     if (_messageController.text.isNotEmpty) {

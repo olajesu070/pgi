@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pgi/view/explore/oroganiser_detail_screen.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
 
-class EventDetailPage extends StatelessWidget {
-  final String coverImageUrl;
+class EventDetailPage extends StatefulWidget {
   final String title;
   final String date;
   final String time;
@@ -11,9 +10,9 @@ class EventDetailPage extends StatelessWidget {
   final String address;
   final String organizerName;
   final String eventDetails;
+  final int userId;
 
   const EventDetailPage({super.key, 
-    required this.coverImageUrl,
     required this.title,
     required this.date,
     required this.time,
@@ -21,7 +20,15 @@ class EventDetailPage extends StatelessWidget {
     required this.address,
     required this.organizerName,
     required this.eventDetails,
+    required this.userId,
   });
+
+  @override
+  State<EventDetailPage> createState() => _EventDetailPageState();
+}
+
+class _EventDetailPageState extends State<EventDetailPage> {
+  
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +40,8 @@ class EventDetailPage extends StatelessWidget {
           Stack(
             children: [
               Image.network(
-                coverImageUrl,
-                width: double.infinity,
+                'https://images.unsplash.com/photo-1500212802521-de7d7426f496?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bmV3JTIweWVhcnxlbnwwfHwwfHx8MA%3D%3D',
+                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
               ),
@@ -84,7 +91,7 @@ class EventDetailPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              title,
+              widget.title,
               style: const TextStyle(
                 fontSize: 35,
                 fontWeight: FontWeight.bold,
@@ -102,11 +109,11 @@ class EventDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      date,
+                      widget.date,
                       style: const TextStyle(fontSize: 16),
                     ),
                     Text(
-                      time,
+                      widget.time,
                       style: const TextStyle(color: Color(0xFF747688), fontSize: 12),
                     ),
                   ],
@@ -126,11 +133,11 @@ class EventDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      centerName,
+                      widget.centerName,
                       style: const TextStyle(fontSize: 16),
                     ),
                     Text(
-                      address,
+                      widget.address,
                       style: const TextStyle(color: Color(0xFF747688), fontSize: 12),
                     ),
                   ],
@@ -150,7 +157,7 @@ class EventDetailPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => OrganizerDetailsScreen(
-                          organizerName: organizerName,
+                          userId: widget.userId,
                         ),
                       ),
                     );
@@ -167,7 +174,7 @@ class EventDetailPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            organizerName,
+                            widget.organizerName,
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize:15 ),
                           ),
                           const Text(
@@ -207,7 +214,7 @@ class EventDetailPage extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Text(
-              eventDetails,
+              widget.eventDetails,
               style: TextStyle(fontSize: 12, color: Colors.grey[800]),
             ),
           ),
