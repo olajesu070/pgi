@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _setStatusBarStyle();
   }
 
   Future<void> _pickImage() async {
@@ -85,6 +88,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  void _setStatusBarStyle() {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.black,  // Transparent status bar
+      statusBarIconBrightness: Brightness.light,  // Light icons for dark backgrounds
+      statusBarBrightness: Brightness.dark,  // Adjust for iOS
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
@@ -104,17 +117,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Profile'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: Stack(
+      body: SafeArea(
+        child: Stack(
         children: [
+           const CustomAppBarBody(
+            title: 'Edit Profile',
+          ),
+         
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: SingleChildScrollView(
@@ -123,6 +132,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                     const SizedBox(height: 80),
                     // Profile Image
                     Center(
                       child: GestureDetector(
@@ -253,6 +263,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
             ),
         ],
+      ),
       ),
     );
   }

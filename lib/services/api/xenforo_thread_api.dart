@@ -71,6 +71,16 @@ Future<void> logResponseToFile(String responseBody) async {
     }
   }
 
+  // Helper method to handle API responses
+  Future<dynamic> _handleResponse(http.Response response) async {
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      // debugPrint('post info: ${response.body}');
+      return response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    } else {
+      throw Exception('Error: ${response.statusCode} - ${response.body}');
+    }
+  }
+
   // Create a thread
   Future<Map<String, dynamic>> createThread({
     required int nodeId,
@@ -187,13 +197,22 @@ Future<void> logResponseToFile(String responseBody) async {
     required String message,
     String? attachmentKey,
   }) async {
-    final body = {
-      'thread_id': threadId,
-      'message': message,
+    final url = Uri.parse('$baseUrl/posts/').replace(queryParameters: {
+      'thread_id': threadId.toString(),
+      'message' : message,
       if (attachmentKey != null) 'attachment_key': attachmentKey,
-    };
-    debugPrint('reply info: $body');
-    return await _post('posts/', body);
+    });
+
+    final accessToken = await _secureStorage.read(key: 'accessToken');
+
+  final response = await http.post( 
+    url,
+    headers: {
+      'XF-Api-Key': apiKey,
+      if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+    },
+  );
+    return await _handleResponse(response);
   }
   
 
@@ -217,4 +236,21 @@ Future<void> logResponseToFile(String responseBody) async {
     };
     return await _post('posts/$postId/vote', body);
   }
+
+
+// POST posts/{id}/react
+// Reacts to the specified post
+// Parameters
+// Input	Type	Description
+// reaction_id	integer	 ID of the reaction to use. Use the current reaction ID to undo
+   Future<Map<String, dynamic>> reactOnPost({
+    required int postId,
+    required int reactionId,
+  }) async {
+    final body = {
+      'reaction_id': reactionId,
+    };
+    return await _post('posts/$postId/react?reaction_id=$reactionId', body);
+  }
+
 }

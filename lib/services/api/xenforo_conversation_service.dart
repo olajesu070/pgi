@@ -12,6 +12,7 @@ class ConversationService {
   // Helper method to handle API responses
   Future<dynamic> _handleResponse(http.Response response) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
+      debugPrint('messages info: ${response.body}');
       return response.body.isNotEmpty ? jsonDecode(response.body) : null;
     } else {
       throw Exception('Error: ${response.statusCode} - ${response.body}');
@@ -75,7 +76,7 @@ class ConversationService {
   final response = await http.post(
     url,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'multipart/form-data',
       'XF-Api-Key': apiKey,
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
     },
@@ -89,49 +90,51 @@ class ConversationService {
   return await _handleResponse(response);
 }
 
-  /// POST conversation-messages/
-  /// Replies to a conversation
   Future<Map<String, dynamic>> replyToConversation({
-    required int conversationId,
-    required String message,
-    String? attachmentKey,
-  }) async {
-    final url = Uri.parse('$baseUrl/conversation-messages/');
-    final accessToken = await _secureStorage.read(key: 'accessToken');
+  required int conversationId,
+  required String message,
+  String? attachmentKey,
+}) async {
+  // Build the URL with query parameters
+  final url = Uri.parse('$baseUrl/conversation-messages/').replace(queryParameters: {
+    'conversation_id': conversationId.toString(),
+    'message': message,
+    if (attachmentKey != null) 'attachment_key': attachmentKey,
+  });
 
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'XF-Api-Key': apiKey,
-        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-      },
-      body: jsonEncode({
-        'conversation_id': conversationId,
-        'message': message,
-        if (attachmentKey != null) 'attachment_key': attachmentKey,
-      }),
-    );
-    return await _handleResponse(response);
-  }
+  final accessToken = await _secureStorage.read(key: 'accessToken');
 
-  /// GET conversation-messages/{id}/
-  /// Gets a specific conversation message
-  Future<Map<String, dynamic>> getConversationMessageById(int id) async {
-    final url = Uri.parse('$baseUrl/conversation-messages/$id/');
-    final accessToken = await _secureStorage.read(key: 'accessToken');
+  final response = await http.post( 
+    url,
+    headers: {
+      'XF-Api-Key': apiKey,
+      if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+    },
+  );
 
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'XF-Api-Key': apiKey,
-        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-      },
-    );
-    return await _handleResponse(response);
-  }
+  return await _handleResponse(response);
+}
 
+
+  
+  ///   GET conversations/{id}/messages
+  /// Gets a page of messages in the specified conversation.
+  Future<Map<String, dynamic>> getConversationMessagesById(int id) async {
+      final url = Uri.parse('$baseUrl/conversations/$id/messages');
+      final accessToken = await _secureStorage.read(key: 'accessToken');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'XF-Api-Key': apiKey,
+          if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+        },
+      );
+      return await _handleResponse(response);
+    }
+    
+ 
   /// POST conversation-messages/{id}/
   /// Updates a specific conversation message
   Future<Map<String, dynamic>> updateConversationMessage({

@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'dart:developer' as developer;
-
 class MediaService {
   final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://pgi.org/api';
   final String apiKey = dotenv.env['CLIENT_ID'] ?? '7887150025286687';
@@ -16,7 +14,7 @@ class MediaService {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
-      //  debugPrint('user info: ${response.body}');
+       debugPrint('mediainfo: ${response.body}');
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed with status code: ${response.statusCode}');
@@ -26,6 +24,22 @@ class MediaService {
   // GET /media/
   Future<Map<String, dynamic>> fetchAllMedia() async {
     final url = Uri.parse('$baseUrl/media/');
+     final accessToken = await _secureStorage.read(key: 'accessToken');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'XF-Api-Key': apiKey,
+         if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      },
+    );
+    return await _handleResponse(response);
+  }
+
+  // GET media-categories/ 
+   Future<Map<String, dynamic>> fetchAllMediaCategories() async {
+    final url = Uri.parse('$baseUrl/media-categories/');
      final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.get(
@@ -59,6 +73,22 @@ class MediaService {
   // GET /media/{id}/
   Future<dynamic> fetchMediaById(String id) async {
     final url = Uri.parse('$baseUrl/media/$id/');
+    final accessToken = await _secureStorage.read(key: 'accessToken');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'XF-Api-Key': apiKey,
+        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      },
+    );
+    return await _handleResponse(response);
+  }
+
+  // GET media-categories/{id}/ 
+   Future<dynamic> fetchMediaCategoriesById(int id) async {
+    final url = Uri.parse('$baseUrl/media-categories/$id/content');
     final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.get(

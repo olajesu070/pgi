@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -14,11 +13,9 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   late OAuth2Service _oauth2Service;
+  final AppLinks _appLinks = AppLinks();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  final _appLinks = AppLinks();
-  String? _accessToken;
-  String? _refreshToken;
-  DateTime? _expirationDate;
   bool _isLoading = false;
 
   @override
@@ -28,7 +25,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _initializeAppLinks();
     _checkAndRefreshToken();
   }
-
 
   void _setLoading(bool loading) {
     setState(() {
@@ -43,8 +39,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       authorizationEndpoint: 'https://pgi.org/oauth2/authorize',
       tokenEndpoint: 'https://pgi.org/api/oauth2/token',
       redirectUri: 'https://pgi.org/auth/signIn',
-      secureStorage: const FlutterSecureStorage(),
-      onTokensUpdated: _loadStoredTokens,
+      secureStorage: _secureStorage,
+      onTokensUpdated: _checkAndRefreshToken,  // Automatically refresh tokens when updated
     );
   }
 
@@ -62,72 +58,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  Future<void> _loadStoredTokens() async {
-    final storage = const FlutterSecureStorage();
-    final accessToken = await storage.read(key: 'accessToken');
-    final refreshToken = await storage.read(key: 'refreshToken');
-    final expirationDateString = await storage.read(key: 'expirationDate');
-
-    setState(() {
-      _accessToken = accessToken;
-      _refreshToken = refreshToken;
-      _expirationDate = expirationDateString != null
-          ? DateTime.tryParse(expirationDateString)
-          : null;
-    });
-  }
-
   Future<void> _checkAndRefreshToken() async {
-    _setLoading(true); // Start loading
+    _setLoading(true);
     try {
-      await _loadStoredTokens();
+      final accessToken = await _secureStorage.read(key: 'accessToken');
+      final refreshToken = await _secureStorage.read(key: 'refreshToken');
+      final expirationDateStr = await _secureStorage.read(key: 'expirationDate');
 
-      if (_accessToken != null && _refreshToken != null && _expirationDate != null) {
-        final now = DateTime.now();
-        if (_expirationDate!.isBefore(now)) {
-          await _oauth2Service.ensureValidAccessToken(context);
+      if (accessToken != null && refreshToken != null && expirationDateStr != null) {
+        final expirationDate = DateTime.parse(expirationDateStr);
+        if (DateTime.now().isAfter(expirationDate)) {
+          await _oauth2Service.refreshAccessToken(context);
           developer.log("Access token refreshed successfully.");
+        } else {
+          developer.log("Valid access token found. Proceeding to home.");
+          _oauth2Service.navigateToHome(context);
         }
       } else {
-        developer.log("No valid token found. Prompting user to log in.");
+        developer.log("No valid tokens found. User needs to log in.");
       }
     } catch (e) {
-      developer.log("Error refreshing token: $e");
-      // _login();
+      developer.log("Error checking or refreshing token: $e");
     } finally {
-      _setLoading(false); // Stop loading
+      _setLoading(false);
     }
   }
-  void _showSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
- void _login() async {
-    _setLoading(true); // Start loading
+
+  void _login() async {
+    _setLoading(true);
     try {
       await _oauth2Service.startOAuthFlow(context);
-      _oauth2Service.onTokensUpdated();
     } catch (e) {
       developer.log("Error during login: $e");
     } finally {
-      _setLoading(false); // Stop loading
+      _setLoading(false);
     }
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Positioned.fill(
-            child: Image.asset(
-              'assets/pgi.jpeg',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/pgi.jpeg', fit: BoxFit.cover),
           ),
-          // Content Overlay
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -139,15 +114,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   const Text(
                     'Welcome to PGI',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                   const SizedBox(height: 10),
                   const Text(
@@ -172,7 +142,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          // Loading Overlay
           if (_isLoading)
             Positioned.fill(
               child: Container(

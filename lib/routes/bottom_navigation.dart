@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pgi/core/constants/sample_events.dart';
 import 'package:pgi/view/discussion/discussion_screen.dart';
 import 'package:pgi/view/explore/home_screen.dart';
 import 'package:pgi/view/gallery/gallery_screen.dart';
@@ -21,7 +20,7 @@ class _BottomNavigationState extends State<BottomNavigation> {
     const HomeScreen(),
     const DiscussionsScreen(),
     const GalleryScreen(),
-     EventMapScreen(events: sampleEvents),
+     const EventMapScreen(),
     const ScheduleScreen(),
   ];
 

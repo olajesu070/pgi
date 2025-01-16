@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pgi/view/discussion/thread_detail_screen.dart';
 
 class ContactUsScreen extends StatelessWidget {
-  ContactUsScreen({super.key});
+  const ContactUsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/view/misc/edit_profile_screen.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -25,18 +26,12 @@ class ProfileScreen extends StatelessWidget {
     final int points = userDetails?['me']['vote_score'] ?? 0;
     
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Navigate back
-          },
-        ),
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
+             const CustomAppBarBody(
+                title: 'Profile',
+              ),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),

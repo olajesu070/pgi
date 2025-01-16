@@ -14,7 +14,7 @@ class UserState with ChangeNotifier {
       // Replace with your API call
       final data = await userApiService.getCurrentUserInfo();
 
-      if (data == null || data.isEmpty) {
+      if (data.isEmpty) {
         _userDetails = null;
         _errorMessage = 'No user information found.';
       } else {

@@ -1,23 +1,25 @@
-// lib/view/widgets/edge_button.dart
 import 'package:flutter/material.dart';
-import 'package:pgi/view/discussion/thread_detail_screen.dart';
 
 class EdgeButton extends StatelessWidget {
   final Color color;
   final String text;
-  final String param;
+  final int param;
 
-  const EdgeButton({required this.color, required this.text, required this.param, super.key});
+  const EdgeButton({
+    required this.color,
+    required this.text,
+    required this.param,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
+        Navigator.pushNamed(
           context,
-          MaterialPageRoute(
-            builder: (context) => ThreadDetailScreen(param: param),
-          ),
+          '/guild',
+          arguments: {'param': param},  // Correct syntax for arguments
         );
       },
       child: Container(
@@ -37,7 +39,7 @@ class EdgeButton extends StatelessWidget {
         child: Center(
           child: Text(
             text,
-            style: const TextStyle(color: Colors.white, fontSize: 10),
+            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
           ),
         ),
       ),

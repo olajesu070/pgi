@@ -5,7 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'dart:developer' as developer;
+// import 'dart:developer' as developer;
 
 class XenForoApiService {
   final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://pgi.org/api';

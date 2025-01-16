@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
-import 'package:pgi/view/message/chatscreen.dart';
 import 'package:pgi/view/message/create_message.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class OrganizerDetailsScreen extends StatefulWidget {
@@ -23,8 +23,19 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    _setStatusBarStyle();
     getUserById();
   }
+
+   void _setStatusBarStyle() {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.black,  // Transparent status bar
+      statusBarIconBrightness: Brightness.light,  // Light icons for dark backgrounds
+      statusBarBrightness: Brightness.dark,  // Adjust for iOS
+    ),
+  );
+}
 
   Future<void> getUserById() async {
     try {
@@ -55,7 +66,7 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
     final avatarUrl = user['avatar_urls']['o'] ?? 'https://picsum.photos/201/200';
     final bannerUrl = user['profile_banner_urls']['l'] ?? 'https://picsum.photos/201/300';
     final fullName = '${user['custom_fields']['firstname']} ${user['custom_fields']['lastname']}';
-    final nickname = user['custom_fields']['pgi_nickname'] ?? 'No nickname';
+    final nickname = user['username'] ?? 'No nickname';
     final isStaff = user['is_staff'] ? 'Staff Member' : 'Member';
     final website = user['website'] ?? '';
     final messageCount = user['message_count'] ?? 0;
@@ -66,12 +77,13 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
     final about = user['about'] ?? 'No about information provided.';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('User Details'),
-      ),
-      body: SingleChildScrollView(
+      body: SafeArea(child: 
+      SingleChildScrollView(
         child: Column(
           children: [
+            const CustomAppBarBody(
+            title: 'User Details',
+          ),
             Stack(
               children: [
                 Image.network(
@@ -146,7 +158,7 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => CreateMessageScreen(
-                                recipientId: widget.userId,
+                                recipientId: [widget.userId],
                               ),
                             ),
                           );
@@ -158,6 +170,7 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

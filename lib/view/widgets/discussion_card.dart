@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:pgi/view/discussion/discussion.dart';
-import 'package:pgi/view/discussion/thread_detail_screen.dart'; // For date formatting
+// For date formatting
 
 class DiscussionCard extends StatelessWidget {
   final String title;
@@ -124,10 +123,10 @@ class DiscussionCard extends StatelessWidget {
                   // Reaction count
                   Row(
                     children: [
-                      const Icon(Icons.thumb_up, size: 16, color: Colors.grey),
+                      const Icon(Icons.remove_red_eye, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
-                        '$reactionCount reactions',
+                        '$reactionCount views',
                         style: const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],

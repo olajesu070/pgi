@@ -48,8 +48,9 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xBE669999),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -66,10 +67,10 @@ class _MessageScreenState extends State<MessageScreen> {
                   });
                 },
               )
-            : const Text("Message"),
+            : const Text("Message", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),),
         actions: [
           IconButton(
-            icon: Icon(isSearching ? Icons.close : Icons.search),
+            icon: Icon(isSearching ? Icons.close : Icons.search, color: Colors.white),
             onPressed: () {
               setState(() {
                 isSearching = !isSearching;

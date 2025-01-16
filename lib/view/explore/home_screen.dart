@@ -87,9 +87,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    final userDetails = userState.userDetails!;
+    final userDetails = userState.userDetails ?? {};
     return Scaffold(
-      drawer: CustomDrawer(userDetails: userDetails,),
+      drawer: CustomDrawer(userDetails: userDetails),
       body: SafeArea(
         child: Stack(
           children: [
@@ -130,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    final userDetails = userState.userDetails!;
+    final userDetails = userState.userDetails ?? {};
     return Positioned(
       top: 0,
       left: 0,
@@ -195,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                    builder: (context) => NotificationScreen(),
+                    builder: (context) => const NotificationScreen(),
                     ),
                   );
                   },
@@ -270,15 +270,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildEdgeButtons() {
     return const Positioned(
-      top: 100,
+      top: 90,
       left: 16,
       right: 16,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          EdgeButton(color: Color(0xFFF44336), text: 'The Guild', param: 'https://pgi.org/pages/about-the-guild/'),
-          EdgeButton(color: Color(0xFFF59762), text: 'PGI Training', param: 'https://pgi.org/pages/introduction-to-professional-use-only-products/'),
-          EdgeButton(color: Color(0xFF29D697), text: 'Memberships', param: 'https://pgi.org/pages/membership/'),
+          EdgeButton(color: Color(0xFFF44336), text: 'The Guild', param: 17),
+          EdgeButton(color: Color(0xFFF59762), text: 'Convention', param: 47),
+          EdgeButton(color: Color(0xFF29D697), text: 'Lodging', param: 55),
         ],
       ),
     );

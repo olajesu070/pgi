@@ -1,13 +1,10 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
 import 'package:http/http.dart' as http;
 import 'package:pgi/core/utils/scopes.dart';
-import 'package:url_launcher/url_launcher.dart';
-
 class OAuth2Service {
   final String clientId;
   final String clientSecret;

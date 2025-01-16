@@ -1,100 +1,171 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
-import 'package:pgi/data/models/event.dart';
+import 'package:pgi/services/api/xenforo_map_api.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 
-
+const apiKey = "SpBinAbdDaWb5uNURKTM";
+const styleUrl = "https://api.maptiler.com/maps/hybrid/style.json"; // Use a visible style
 
 class EventMapScreen extends StatefulWidget {
-  final List<Event> events;
-
-  const EventMapScreen({super.key, required this.events});
+  const EventMapScreen({super.key});
 
   @override
   _EventMapScreenState createState() => _EventMapScreenState();
 }
 
 class _EventMapScreenState extends State<EventMapScreen> {
-  MapLibreMapController? mapController;
-  Map<Symbol, Event> symbolEventMap = {}; // Map to link each Symbol to an Event
+  MapLibreMapController? _mapController;
+  final MapService mapService = MapService();
+  List<Map<String, dynamic>> geoJsonData = [];
+  bool isLoading = true;
+  String errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  Future<void> _fetchMapCoordinates() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = '';
+    });
+
+    try {
+      final data = await mapService.getMapCoordinate();
+      final mapData = data['map'];
+      if (mapData == null) {
+        setState(() {
+          geoJsonData = [];
+          errorMessage = 'No map data available.';
+          isLoading = false;
+        });
+        return;
+      }
+
+      final geoJson = mapData['geojson'];
+      final features = geoJson != null ? geoJson['features'] : null;
+
+      if (features == null || features.isEmpty) {
+        setState(() {
+          geoJsonData = [];
+          errorMessage = 'No features available in map data.';
+          isLoading = false;
+        });
+        return;
+      }
+
+      geoJsonData = List<Map<String, dynamic>>.from(features);
+      for (var geoJson in geoJsonData) {
+        _addGeoJsonToMap(geoJson);
+      }
+
+      setState(() {
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = '$e Failed to load data. Please try again later.';
+        isLoading = false;
+      });
+    }
+  }
+
+  void _addGeoJsonToMap(Map<String, dynamic> feature) {
+    if (_mapController == null) return;
+
+    final geometry = feature['geometry'];
+    if (geometry == null) return;
+
+    final type = geometry['type'];
+    final coordinates = geometry['coordinates'];
+
+    if (type == null || coordinates == null) return;
+
+    switch (type) {
+      case 'Point':
+        _addPointToMap(coordinates);
+        break;
+      case 'LineString':
+        _addLineStringToMap(coordinates);
+        break;
+      case 'Polygon':
+        _addPolygonToMap(coordinates);
+        break;
+    }
+  }
+
+  void _addPointToMap(List<dynamic> coordinates) {
+    _mapController?.addSymbol(SymbolOptions(
+      geometry: LatLng(coordinates[1], coordinates[0]),
+      iconImage: 'default-marker',  // Replace with a working icon from your style
+    ));
+  }
+
+  void _addLineStringToMap(List<dynamic> coordinates) {
+    List<LatLng> latLngList = coordinates
+        .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+        .toList();
+    _mapController?.addLine(LineOptions(
+      geometry: latLngList,
+      lineColor: "#FF0000", // Bright red for visibility
+      lineWidth: 4.0,
+      lineOpacity: 0.8,
+    ));
+  }
+
+  void _addPolygonToMap(List<dynamic> coordinates) {
+    List<LatLng> latLngList = coordinates[0]
+        .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+        .toList();
+    _mapController?.addFill(FillOptions(
+      geometry: [latLngList],
+      fillColor: "#00FF00",  // Bright green for visibility
+      fillOpacity: 0.5,
+    ));
+  }
 
   void _onMapCreated(MapLibreMapController controller) {
-    mapController = controller;
-    _addEventMarkers();
-  }
-
-  void _addEventMarkers() {
-    for (var event in widget.events) {
-      mapController?.addSymbol(
-        SymbolOptions(
-          geometry: LatLng(event.latitude, event.longitude),
-          iconImage: "marker-15", // Use custom marker image if available
-          iconSize: 1.5,
-        ),
-      ).then((symbol) {
-        // Store the symbol and event association
-        symbolEventMap[symbol] = event;
-            });
-    }
-  }
-
-  void _onSymbolTapped(Symbol symbol) {
-    // Retrieve the associated event using the symbol as the key
-    final event = symbolEventMap[symbol];
-    if (event != null) {
-      _showEventDetailsBottomSheet(event);
-    }
-  }
-
-  void _showEventDetailsBottomSheet(Event event) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(event.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(event.description, style: const TextStyle(fontSize: 16)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text('Close'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    _mapController = controller;
+    _fetchMapCoordinates();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Event Locations'),
-      ),
-      body: MapLibreMap(
-        styleString: "https://demotiles.maplibre.org/style.json", // Replace with your preferred style
-        onMapCreated: _onMapCreated,
-        onStyleLoadedCallback: () {
-          mapController?.onSymbolTapped.add(_onSymbolTapped);
-        },
-        initialCameraPosition: CameraPosition(
-          target: LatLng(widget.events.first.latitude, widget.events.first.longitude),
-          zoom: 10.0,
-        ),
+      body: Column(
+        children: [
+          const CustomAppBarBody(
+            title: 'Event Map',
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                MapLibreMap(
+                  styleString: "$styleUrl?key=$apiKey",
+                  initialCameraPosition: const CameraPosition(
+                    target: LatLng(46.42300325164794, -94.2815193249055),
+                    zoom: 15.0,
+                  ),
+                  onMapCreated: _onMapCreated,
+                ),
+                if (isLoading)
+                  const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                if (errorMessage.isNotEmpty)
+                  Center(
+                    child: Text(
+                      errorMessage,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    mapController?.onSymbolTapped.remove(_onSymbolTapped);
-    mapController?.dispose();
-    super.dispose();
   }
 }

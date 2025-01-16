@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pgi/services/api/xenforo_event_service.dart';
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:intl/intl.dart';
+import 'package:pgi/view/explore/event_detail_screen.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart'; // For date formatting
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -52,12 +54,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
  @override
 Widget build(BuildContext context) {
   return Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      title: const Text('Events'),
-    ),
     body: Column(
       children: [
+         const CustomAppBarBody(
+            title: 'Events',
+          ),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16.0),
@@ -97,6 +98,12 @@ Widget build(BuildContext context) {
     final formattedDate = DateFormat.yMMMMd().format(eventStartDate);
     final formattedEndDate = DateFormat.yMMMMd().format(eventEndDate);
     final location = event['event_timezone'] ?? 'Location not specified';
+    final  categoryTitle = event['Category']?['title'] ?? 'General';
+    final userId = event['user_id'];
+    final  username = event['username'] ?? 'Unknown';
+    final message = event['message'] ?? 'No description provided.';
+    final dateRange = DateFormat('d MMM, yyyy').format(eventStartDate) +
+        (eventStartDate == eventEndDate ? '' : ' - ${DateFormat('d MMM, yyyy').format(eventEndDate)}');
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -107,8 +114,21 @@ Widget build(BuildContext context) {
       child: InkWell(
       borderRadius: BorderRadius.circular(15.0),
       onTap: () {
-        // Handle event card tap for more details
-        print('Tapped on $eventTitle');
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventDetailPage(
+              title: eventTitle,
+              date: dateRange,
+              time: DateFormat('hh:mm a').format(eventStartDate),
+              centerName: categoryTitle,
+              address: location,
+              organizerName: username,
+              eventDetails: message,
+              userId: userId,
+            ),
+          ),
+        );
       },
       child: Padding(
         padding: const EdgeInsets.all(16.0),

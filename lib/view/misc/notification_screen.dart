@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:pgi/services/api/xenforo_notification_service.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -11,12 +14,23 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationService _notificationService = NotificationService();
   bool isLoading = true;
-List<dynamic> notifications = [];
+  List<dynamic> notifications = [];
 
   @override
   void initState() {
     super.initState();
+    _setStatusBarStyle();
     _fetchNotifications();
+  }
+
+  void _setStatusBarStyle() {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.black, // Dark background
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark, // For iOS
+      ),
+    );
   }
 
   Future<void> _fetchNotifications() async {
@@ -46,19 +60,14 @@ List<dynamic> notifications = [];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Notifications'),
-        actions: [
-          TextButton(
-            onPressed: markAllAsRead,
-            child: const Text(
-              'Mark all as read',
-              style: TextStyle(color: Colors.white),
-            ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const CustomAppBarBody(
+            title: 'Notifications',
           ),
-        ],
-      ),
-      body: isLoading
+          Expanded(
+           child: isLoading
           ? const Center(child: CircularProgressIndicator())
           : notifications.isEmpty
               ? const Center(
@@ -73,6 +82,13 @@ List<dynamic> notifications = [];
                     itemCount: notifications.length,
                     itemBuilder: (context, index) {
                       final notification = notifications[index];
+                      final user = notification['User'];
+                       // Get the event date and format it
+                      final eventDate = notification['event_date'] != null
+                          ? DateTime.fromMillisecondsSinceEpoch(
+                                  notification['event_date'] * 1000)
+                              .toLocal()
+                          : null;
                       return Card(
                         elevation: 3,
                         shape: RoundedRectangleBorder(
@@ -80,43 +96,69 @@ List<dynamic> notifications = [];
                         ),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: notification['isRead']
-                                ? Colors.green
-                                : Colors.red,
-                            child: Icon(
-                              notification['isRead']
-                                  ? Icons.notifications_active
-                                  : Icons.notifications,
-                              color: Colors.white,
-                            ),
+                            backgroundImage: NetworkImage(user['avatar_urls']['s'] ?? ''),
                           ),
                           title: Text(
-                            notification['title'] ?? 'Untitled Notification',
+                            notification['alert_text'] ?? 'Untitled Notification',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: notification['isRead']
-                                  ? Colors.grey
-                                  : Colors.black,
+                              color: notification['auto_read'] ? Colors.grey : Colors.black,
                             ),
                           ),
-                          subtitle: Text(
-                            notification['message'] ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          // subtitle: Text(eventDate != null ? eventDate.toString() : 'Unknown date'),
+                          subtitle: Text(eventDate != null ? '${DateFormat('hh:mm a').format(eventDate)} on ${DateFormat('d MMM, yyyy').format(eventDate)}' : 'Unknown date'),
+                         
+                          onTap: () {
+                            // Navigate to the URL of the notification
+                            final alertUrl = notification['alert_url'];
+                            if (alertUrl != null && alertUrl.isNotEmpty) {
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => NotificationDetailScreen(url: alertUrl),
+                              //   ),
+                              // );
+                            }
+                          },
                           trailing: Icon(
-                            notification['isRead']
-                                ? Icons.check_circle
-                                : Icons.circle,
-                            color: notification['isRead']
-                                ? Colors.green
-                                : Colors.red,
+                            notification['auto_read'] ? Icons.check_circle : Icons.circle,
+                            color: notification['auto_read'] ? Colors.green : Colors.red,
                           ),
                         ),
                       );
                     },
                   ),
                 ),
+          ),
+          ],
+        )
+       
+                
+      )
+    );
+  }
+}
+
+class NotificationDetailScreen extends StatelessWidget {
+  final String url;
+
+  const NotificationDetailScreen({super.key, required this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notification Detail'),
+      ),
+      body: Center(
+        child: Column(
+          children: [
+            const Text('Details for notification:'),
+            Text(url),
+            // You can load the URL content here or show more info as needed
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,63 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:video_player/video_player.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
 
-  const VideoPlayerScreen({Key? key, required this.videoUrl}) : super(key: key);
+  const VideoPlayerScreen({super.key, required this.videoUrl});
 
   @override
-  _VideoPlayerScreenState createState() => _VideoPlayerScreenState();
+  VideoPlayerScreenState createState() => VideoPlayerScreenState();
 }
 
-class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   late VideoPlayerController _controller;
-   bool startedPlaying = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset(widget.videoUrl);
-    _controller.addListener(() {
-      if (startedPlaying && !_controller.value.isPlaying) {
-        Navigator.of(context).pop();
-      }
-    });
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..initialize().then((_) {
+        setState(() {}); // UI update after initialization
+      });
+    _setStatusBarStyle(); // Set status bar style on init
   }
 
-   Future<bool> started() async {
-    await _controller.initialize();
-    await _controller.play();
-    startedPlaying = true;
-    return true;
-  }
-
-   @override
+  @override
   void dispose() {
+    _setStatusBarStyle(); // Ensure correct order
     _controller.dispose();
     super.dispose();
   }
 
-  @override
- Widget build(BuildContext context) {
-    return Material(
-      child: Center(
-        child: FutureBuilder<bool>(
-          future: started(),
-          builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
-            if (snapshot.data ?? false) {
-              return AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller),
-              );
-            } else {
-              return const Text('waiting for video to load');
-            }
-          },
-        ),
+  void _setStatusBarStyle() {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.black, // Dark background
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark, // For iOS
       ),
     );
   }
 
- 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+              const CustomAppBarBody(title: 'Video Player'),
+              Expanded(
+                child:Center(
+                  child: _controller.value.isInitialized
+                      ? AspectRatio(
+                          aspectRatio: _controller.value.aspectRatio,
+                          child: VideoPlayer(_controller),
+                        )
+                      : const CircularProgressIndicator(),
+                ), 
+              )
+          ],
+        ) 
+       
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          setState(() {
+            _controller.value.isPlaying ? _controller.pause() : _controller.play();
+          });
+        },
+        child: Icon(_controller.value.isPlaying ? Icons.pause : Icons.play_arrow),
+      ),
+    );
+  }
 }

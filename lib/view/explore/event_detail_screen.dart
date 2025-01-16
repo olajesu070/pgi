@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pgi/view/explore/oroganiser_detail_screen.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
 
 class EventDetailPage extends StatefulWidget {
@@ -28,14 +30,33 @@ class EventDetailPage extends StatefulWidget {
 }
 
 class _EventDetailPageState extends State<EventDetailPage> {
-  
+   @override
+  void initState() {
+    super.initState();
+    _setStatusBarStyle();
+  }
+
+  void _setStatusBarStyle() {
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.black, // Dark background
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark, // For iOS
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
+      body: SafeArea(child: 
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const CustomAppBarBody(
+            title: 'Event Detail',
+            
+          ),
           // Cover Image with overlay
           Stack(
             children: [
@@ -44,46 +65,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
                  width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
-              ),
-              Positioned(
-                top: 40,
-                left: 16,
-                child: Row(
-                  children: [
-                    // Back Button
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    // Page Title
-                    const Text(
-                      'Event Detail',
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Bookmark Icon
-              Positioned(
-                top: 40,
-                right: 16,
-                child: IconButton(
-                  icon: const Icon(Icons.bookmark_border, color: Colors.white),
-                  onPressed: () {
-                    // Bookmark action
-                  },
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(),
-                  iconSize: 24,
-                  color: Colors.white,
-                ),
               ),
             ],
           ),
@@ -236,6 +217,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
           
         ],
+      ),
       ),
     );
   }

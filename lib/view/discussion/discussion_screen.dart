@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pgi/services/api/xenforo_api_service.dart';
-import 'package:pgi/view/misc/post_thread_screen.dart';
+// import 'package:pgi/view/misc/post_thread_screen.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:pgi/view/widgets/discussion_card.dart';
 
 class DiscussionsScreen extends StatefulWidget {
@@ -54,63 +55,55 @@ class _DiscussionsScreenState extends State<DiscussionsScreen> {
   @override
 Widget build(BuildContext context) {
   return Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      title: const Text('Discussions'),
-      // actions: [
-      //   IconButton(
-      //     icon: const Icon(Icons.search),
-      //     onPressed: () {
-      //       // Handle search action
-      //     },
-      //   ),
-      //   IconButton(
-      //     icon: const Icon(Icons.more_vert),
-      //     onPressed: () {
-      //       // Handle more options action
-      //     },
-      //   ),
-      // ],
+    body: Column(
+      children: [
+        const CustomAppBarBody(
+            title: 'Discussions',
+            showBackButton: false,
+          ),
+     Expanded(
+      child:    Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator()) // Loading state
+              : discussions.isEmpty
+                  ? Center(child: Text(errorMessage.isNotEmpty ? errorMessage : 'No discussions available.')) // Empty or error message
+                  : ListView.builder(
+                      itemCount: discussions.length,
+                      itemBuilder: (context, index) {
+                        final discussion = discussions[index];
+                        final user = discussion['User'];
+                        final formattedDate = DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(discussion['post_date'] * 1000));
+                        
+                        return DiscussionCard(
+                          title: discussion['title'] ?? 'Untitled',
+                          avatars: user != null ? [user['avatar_urls']['s'] ?? ''] : [],
+                          remainingCount: discussion['reply_count'] ?? 0,
+                          forumTitle: discussion['Forum']['title'] ?? 'General',
+                          postDate: formattedDate,
+                          reactionCount: discussion['view_count'] ?? 0,
+                          replyCount: discussion['reply_count'] ?? 0,
+                          username: user['username'] ?? 'Anonymous',
+                          viewUrl: discussion['view_url'] ?? '',
+                          threadId: discussion['thread_id'] ?? '',
+                        );
+                      },
+                    ),
+        ),
+     )
+     ],
     ),
-    body: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: isLoading
-          ? const Center(child: CircularProgressIndicator()) // Loading state
-          : discussions.isEmpty
-              ? Center(child: Text(errorMessage.isNotEmpty ? errorMessage : 'No discussions available.')) // Empty or error message
-              : ListView.builder(
-                  itemCount: discussions.length,
-                  itemBuilder: (context, index) {
-                    final discussion = discussions[index];
-                    final user = discussion['User'];
-                    final formattedDate = DateFormat('MMM dd, yyyy').format(DateTime.fromMillisecondsSinceEpoch(discussion['post_date'] * 1000));
-                    
-                    return DiscussionCard(
-                      title: discussion['title'] ?? 'Untitled',
-                      avatars: user != null ? [user['avatar_urls']['s'] ?? ''] : [],
-                      remainingCount: discussion['reply_count'] ?? 0,
-                      forumTitle: discussion['Forum']['title'] ?? 'General',
-                      postDate: formattedDate,
-                      reactionCount: user['reaction_score'] ?? 0,
-                      replyCount: discussion['reply_count'] ?? 0,
-                      username: user['username'] ?? 'Anonymous',
-                      viewUrl: discussion['view_url'] ?? '',
-                      threadId: discussion['thread_id'] ?? '',
-                    );
-                  },
-                ),
-    ),
-    floatingActionButton: FloatingActionButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PostThreadScreen()),
-        );
-      },
-      tooltip: 'Post a Thread',
-      backgroundColor: const Color(0xE40A5338),
-      child: const Icon(Icons.add, color: Colors.white),
-    ),
+    // floatingActionButton: FloatingActionButton(
+    //   onPressed: () {
+    //     Navigator.push(
+    //       context,
+    //       MaterialPageRoute(builder: (context) => const PostThreadScreen()),
+    //     );
+    //   },
+    //   tooltip: 'Post a Thread',
+    //   backgroundColor: const Color(0xE40A5338),
+    //   child: const Icon(Icons.add, color: Colors.white),
+    // ),
   );
 }
 

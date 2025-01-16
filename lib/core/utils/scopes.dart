@@ -22,6 +22,7 @@ const List<String> scopes = [
   'user:read',
   'user:write',
   'event:read',
+  'map:read',
 ];
 
 /// Get all scopes as a single space-separated string

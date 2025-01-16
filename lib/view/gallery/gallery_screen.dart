@@ -12,83 +12,207 @@ class GalleryScreen extends StatefulWidget {
 
 class _GalleryScreenState extends State<GalleryScreen> {
   final mediaService = MediaService();
-  List<dynamic> mediaAlbums = []; // State to hold fetched albums
+  List<dynamic> mediaAlbums = []; // Albums data
+  List<dynamic> mediaCategories = []; // Categories data
   bool isLoading = true; // Loading indicator
 
   @override
   void initState() {
     super.initState();
     _fetchMedia();
+    _fetchMediaCategories();
   }
 
- Future<void> _fetchMedia() async {
-  try {
-    final response = await mediaService.fetchAllMediaAlbums();
-    
-    // Extract the 'albums' field from the response
-    final albums = response['albums'] as List<dynamic>;
+  Future<void> _fetchMedia() async {
+    try {
+      final response = await mediaService.fetchAllMediaAlbums();
+      final albums = response['albums'] as List<dynamic>;
 
-    setState(() {
-      mediaAlbums = albums; // Update state with the list of albums
-      isLoading = false;
-    });
-  } catch (e) {
-    print('Error fetching media: $e');
-    setState(() {
-      isLoading = false;
-    });
+      setState(() {
+        mediaAlbums = albums;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching media: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
-}
 
+  Future<void> _fetchMediaCategories() async {
+    try {
+      final response = await mediaService.fetchAllMediaCategories();
+      final categories = response['categories'] as List<dynamic>;
+
+      setState(() {
+        mediaCategories = categories;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching media categories: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('Albums'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              // Handle the addition of a new album
-            },
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Gallery', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),textAlign: TextAlign.center,),
+          backgroundColor: const Color(0xBE669999),
+            centerTitle: true,
+          elevation: 0,
+        bottom: PreferredSize(
+  preferredSize: const Size.fromHeight(60.0), // Adjust height as needed
+  child: Container(
+    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Adjust spacing
+    padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 8), // Adjust spacing
+    decoration: BoxDecoration(
+      color: const Color(0x45AFAEAE), // Gray background color
+      borderRadius: BorderRadius.circular(30), // Rounded corners
+      
+    ),
+    child: TabBar(
+      dividerColor: Colors.transparent,
+      indicator: BoxDecoration(
+        color: Colors.white, // White color for the active tab
+        borderRadius: BorderRadius.circular(25), // Rounded indicator
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.4),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      body: SafeArea(
-        child: isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : mediaAlbums.isEmpty
-                ? const Center(
-                    child: Text('No albums available.'),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: mediaAlbums.length,
-                    itemBuilder: (context, index) {
-                      final album = mediaAlbums[index];
-                      return GalleryCard(
-                        imageUrl: album['thumbnail_url'] ?? 'https://via.placeholder.com/150',
-                        title: album['title'] ?? 'Untitled Album',
-                        avatarUrl: album['User']?['avatar_urls']?['s'] ?? 'https://via.placeholder.com/50',
-                        username: album['username'] ?? 'Unknown User',
-                        mediaCount: album['media_count'] ?? 0,
-                        viewCount: album['view_count'] ?? 0,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => GalleryDetailScreen(title: album['title'], albumId: album['album_id']),
-                            ),
-                          );
-                        },
-                      );
-                    },
+      labelColor: Colors.black,
+      unselectedLabelColor: Colors.black.withOpacity(0.6),
+      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      tabs:  [
+        Container(
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0x00FFFFFF), // Background hint color for unselected tab
+                    borderRadius: BorderRadius.circular(20),
                   ),
+                  child: const Text('Categories'),
+                ),
+                Container(
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0x00FFFFFF),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text('Albums'),
+                ),
+      ],
+      indicatorColor: Colors.transparent,
+    ),
+  ),
+),
+
+        ),
+        body: SafeArea(
+          child: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : TabBarView(
+                  children: [
+                    // Categories Tab
+                    _buildCategoriesList(),
+                    // Albums Tab
+                    _buildAlbumsList(),
+                  ],
+                ),
+        ),
       ),
+    );
+  }
+
+  // Widget to display categories
+  Widget _buildCategoriesList() {
+    if (mediaCategories.isEmpty) {
+      return const Center(child: Text('No categories available.'));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: mediaCategories.length,
+      itemBuilder: (context, index) {
+        final category = mediaCategories[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: ListTile(
+            title: Text(category['title'] ?? 'Untitled Category',  style: const TextStyle(fontWeight: FontWeight.bold),),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+          Text('${category['media_count'] ?? 0} media items'),
+          Text('Allowed types: ${category['allowed_types']?.join(', ') ?? 'None'}'),
+           
+              ],
+
+            ),
+            onTap: () {
+              Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GalleryDetailScreen(
+              title: category['title'],
+              albumId: category['category_id'],
+              mediaType: 'category',
+            ),
+          ),
+              );
+            },
+          ),
+        );
+     
+      },
+    );
+  }
+
+  
+  // Widget to display albums
+  Widget _buildAlbumsList() {
+    if (mediaAlbums.isEmpty) {
+      return const Center(child: Text('No albums available.'));
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: mediaAlbums.length,
+      itemBuilder: (context, index) {
+        final album = mediaAlbums[index];
+        return GalleryCard(
+          imageUrl: album['thumbnail_url'] ?? 'https://via.placeholder.com/150',
+          title: album['title'] ?? 'Untitled Album',
+          avatarUrl: album['User']?['avatar_urls']?['s'] ?? 'https://via.placeholder.com/50',
+          username: album['username'] ?? 'Unknown User',
+          mediaCount: album['media_count'] ?? 0,
+          viewCount: album['view_count'] ?? 0,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GalleryDetailScreen(
+                  title: album['title'], 
+                  albumId: album['album_id'], 
+                  mediaType: 'album',),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
