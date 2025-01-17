@@ -141,6 +141,30 @@ class XenForoUserApi {
     }
   }
 
+  // POST users/{id}/ 
+  Future<bool> updateUser(int userId, Map<String, dynamic> data) async {
+    final url = Uri.parse('$baseUrl/users/$userId');
+    final accessToken = await _secureStorage.read(key: 'accessToken');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'XF-Api-Key': apiKey,
+          if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+        },
+        body: jsonEncode(data),
+      );
+      final responseBody = jsonDecode(response.body);
+      return responseBody['success'] == true;
+    } catch (e) {
+      debugPrint('Error updating user: $e');
+      rethrow;
+    }
+  }
+
+
 /// Fetch information about a specific user by ID
 Future<Map<String, dynamic>> getUserInfoById(int userId, {bool withPosts = false, int page = 1}) async {
   final url = Uri.parse('$baseUrl/users/$userId?with_posts=$withPosts&page=$page');

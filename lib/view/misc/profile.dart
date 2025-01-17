@@ -23,7 +23,7 @@ class ProfileScreen extends StatelessWidget {
     final bool isActiveMember = userDetails?['me']['activity_visible'] ?? false;
     final int messages = userDetails?['me']['message_count'] ?? 0;
     final int reactionScore = userDetails?['me']['reaction_score'] ?? 0;
-    final int points = userDetails?['me']['vote_score'] ?? 0;
+    final int points = userDetails?['me']['trophy_points'] ?? 0;
     
     return Scaffold(
       body: SingleChildScrollView(

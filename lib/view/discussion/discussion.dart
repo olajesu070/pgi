@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pgi/core/utils/bbcode_parser.dart';
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/services/api/xenforo_thread_api.dart';
 import 'package:pgi/view/explore/oroganiser_detail_screen.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
@@ -26,19 +27,10 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _setStatusBarStyle();
+   StatusBarUtil.setLightStatusBar();
     _fetchThreadDetails();
   }
 
-  void _setStatusBarStyle() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.black,  // Transparent status bar
-      statusBarIconBrightness: Brightness.light,  // Light icons for dark backgrounds
-      statusBarBrightness: Brightness.dark,  // Adjust for iOS
-    ),
-  );
-}
 
   @override
   void dispose() {
@@ -55,7 +47,7 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
  Future<void> _handleReaction(Map<String, dynamic> reply, int reactionType) async {
   final postId = reply['post_id'];
   final username = reply['username'] ?? 'Unknown User';
-  final action = reactionType == 1 ? 'liked' : 'disliked';
+  final action = reactionType == 1 ? 'react to' : 'disliked';
   
   debugPrint('User $username has $action post $postId');
   try {
@@ -212,43 +204,64 @@ Widget build(BuildContext context) {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundImage: NetworkImage(
-                  reply['User']?['avatar_urls']['o'] ?? 'https://via.placeholder.com/150',
+              GestureDetector(
+                onTap: () {
+                  // Handle avatar and username click
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OrganizerDetailsScreen(userId: reply['user_id']),
+                    ),
+                  );
+                },
+                child: CircleAvatar(
+                  backgroundImage: NetworkImage(
+                    reply['User']?['avatar_urls']['o'] ?? 'https://via.placeholder.com/150',
+                  ),
+                  radius: 20,
                 ),
-                radius: 20,
               ),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    reply['username'] ?? 'Anonymous',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Text(
-                        'Posted on ${DateFormat('yyyy-MM-dd – kk:mm').format(DateTime.fromMillisecondsSinceEpoch(reply['post_date'] * 1000))}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(width: 10),
-                      
+              GestureDetector(
+                onTap: () {
+                  // Handle avatar and username click
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OrganizerDetailsScreen(userId: reply['user_id']),
+                    ),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      reply['username'] ?? 'Anonymous',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Text(
+                          'Posted on ${DateFormat('yyyy-MM-dd – kk:mm').format(DateTime.fromMillisecondsSinceEpoch(reply['post_date'] * 1000))}',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(width: 10),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: isUnread ? Colors.red : Colors.green,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child:  Text(
+                          child: Text(
                             isUnread ? 'Unread' : 'Read',
                             style: const TextStyle(color: Colors.white, fontSize: 10),
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -266,10 +279,6 @@ Widget build(BuildContext context) {
                     icon: const Icon(Icons.thumb_up, color: Colors.blue),
                     onPressed: () => _handleReaction(reply, 1),
                   ),
-                  // IconButton(
-                  //   icon: const Icon(Icons.thumb_down, color: Colors.red),
-                  //   onPressed: () => _handleReaction(reply, -1),
-                  // ),
                   Text('$reactionScore'),
                 ],
               ),

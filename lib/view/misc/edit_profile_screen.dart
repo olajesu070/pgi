@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
+import 'package:pgi/view/widgets/custom_button.dart';
 import 'package:provider/provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -28,7 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _setStatusBarStyle();
+    StatusBarUtil.setLightStatusBar();
   }
 
   Future<void> _pickImage() async {
@@ -88,15 +90,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  void _setStatusBarStyle() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.black,  // Transparent status bar
-      statusBarIconBrightness: Brightness.light,  // Light icons for dark backgrounds
-      statusBarBrightness: Brightness.dark,  // Adjust for iOS
-    ),
-  );
-}
 
   @override
   Widget build(BuildContext context) {
@@ -116,15 +109,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _bio = about;
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
-        children: [
-           const CustomAppBarBody(
-            title: 'Edit Profile',
-          ),
-         
-          Padding(
+   return Scaffold(
+  body: SafeArea(
+    child: Column(
+      children: [
+        const CustomAppBarBody(
+          title: 'Edit Profile',
+        ),
+        Expanded(
+          child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: SingleChildScrollView(
               child: Form(
@@ -132,7 +125,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                     const SizedBox(height: 80),
+                    const SizedBox(height: 80),
                     // Profile Image
                     Center(
                       child: GestureDetector(
@@ -141,8 +134,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           radius: 50,
                           backgroundImage: _selectedImage != null
                               ? FileImage(_selectedImage!)
-                              :NetworkImage(avatarUrl)
-                                  as ImageProvider,
+                              : NetworkImage(avatarUrl) as ImageProvider,
                           child: _selectedImage == null
                               ? const Icon(Icons.edit, size: 30, color: Colors.white)
                               : null,
@@ -150,7 +142,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-
                     // First Name
                     TextFormField(
                       initialValue: _firstname,
@@ -171,7 +162,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-
                     // Last Name
                     TextFormField(
                       initialValue: _lastname,
@@ -192,7 +182,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-
                     // Email
                     TextFormField(
                       initialValue: _email,
@@ -215,7 +204,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-
                     // Bio
                     TextFormField(
                       initialValue: _bio,
@@ -236,35 +224,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       },
                       maxLines: 3,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Save Button
-                    ElevatedButton(
+                    const SizedBox(height: 16),
+                    CustomButton(
+                      label: 'Save Changes',
+                      padding: 5.0,
                       onPressed: _saveProfile,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      child: const Text(
-                        'Save Changes',
-                        style: TextStyle(fontSize: 18),
-                      ),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.5),
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+        ),
+        if (_isLoading)
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            child: const Center(
+              child: CircularProgressIndicator(),
             ),
-        ],
-      ),
-      ),
-    );
+          ),
+      ],
+    ),
+  ),
+);
+
   }
 }

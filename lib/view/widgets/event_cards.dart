@@ -12,6 +12,7 @@ class EventCard extends StatelessWidget {
   final String categoryTitle;
   final int viewCount;
   final int userId;
+  final bool isRsvp;
 
   const EventCard({
     super.key,
@@ -24,6 +25,7 @@ class EventCard extends StatelessWidget {
     required this.categoryTitle,
     required this.viewCount,
     required this.userId,
+     required this.isRsvp
   });
 
   @override
@@ -41,11 +43,13 @@ class EventCard extends StatelessWidget {
               title: title,
               date: dateRange,
               time: DateFormat('hh:mm a').format(fEventStartDate),
+              endTime: DateFormat('hh:mm a').format(fEventEndDate),
               centerName: categoryTitle,
               address: location,
               organizerName: username,
               eventDetails: message,
               userId: userId,
+              isRsvp: isRsvp,
             ),
           ),
         );

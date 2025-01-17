@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/services/api/xenforo_conversation_service.dart';
 import 'package:pgi/view/explore/oroganiser_detail_screen.dart';
@@ -25,19 +26,9 @@ class _ChatPageState extends State<ChatPage> {
   @override
     void initState() {
       super.initState();
-      _setStatusBarStyle();
+      StatusBarUtil.setLightStatusBar();
       _fetchChat();
     }
-
-   void _setStatusBarStyle() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.black,  // Transparent status bar
-      statusBarIconBrightness: Brightness.light,  // Light icons for dark backgrounds
-      statusBarBrightness: Brightness.dark,  // Adjust for iOS
-    ),
-  );
-}
 
   void _navigateToUserDetails(int userId) {
     Navigator.push(

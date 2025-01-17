@@ -310,6 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
             categoryTitle: event['Category']?['title'] ?? 'General',
             viewCount: event['view_count'] ?? 0,
             userId: event['user_id'],
+            isRsvp: event['is_rsvp_enabled'] ?? false,
            );
         },
       ),

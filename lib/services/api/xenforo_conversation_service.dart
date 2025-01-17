@@ -12,7 +12,7 @@ class ConversationService {
   // Helper method to handle API responses
   Future<dynamic> _handleResponse(http.Response response) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      debugPrint('messages info: ${response.body}');
+      // debugPrint('messages info: ${response.body}');
       return response.body.isNotEmpty ? jsonDecode(response.body) : null;
     } else {
       throw Exception('Error: ${response.statusCode} - ${response.body}');

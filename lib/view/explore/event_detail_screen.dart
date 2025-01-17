@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/view/explore/oroganiser_detail_screen.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
@@ -13,6 +14,8 @@ class EventDetailPage extends StatefulWidget {
   final String organizerName;
   final String eventDetails;
   final int userId;
+  final String endTime;
+  final bool isRsvp;
 
   const EventDetailPage({super.key, 
     required this.title,
@@ -23,6 +26,8 @@ class EventDetailPage extends StatefulWidget {
     required this.organizerName,
     required this.eventDetails,
     required this.userId,
+    required this.endTime,
+    required this.isRsvp
   });
 
   @override
@@ -33,17 +38,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
    @override
   void initState() {
     super.initState();
-    _setStatusBarStyle();
-  }
-
-  void _setStatusBarStyle() {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.black, // Dark background
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark, // For iOS
-      ),
-    );
+    StatusBarUtil.setLightStatusBar();
   }
 
   @override
@@ -94,7 +89,11 @@ class _EventDetailPageState extends State<EventDetailPage> {
                       style: const TextStyle(fontSize: 16),
                     ),
                     Text(
-                      widget.time,
+                      'Start Time: ${widget.time}',
+                      style: const TextStyle(color: Color(0xFF747688), fontSize: 12),
+                    ),
+                    Text(
+                      'End Time: ${widget.endTime}',
                       style: const TextStyle(color: Color(0xFF747688), fontSize: 12),
                     ),
                   ],
@@ -145,11 +144,11 @@ class _EventDetailPageState extends State<EventDetailPage> {
                   },
                   child: Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 20,
-                        backgroundImage: NetworkImage(
-                            'https://picsum.photos/201'), // Organizer avatar
-                      ),
+                        const Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Colors.grey,
+                        ),
                       const SizedBox(width: 8),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,6 +200,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
           ),
           const Spacer(),
           // RSVP Button
+
+          if (widget.isRsvp)
           Padding(
             padding: const EdgeInsets.all(16.0),
 

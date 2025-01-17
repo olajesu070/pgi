@@ -1,6 +1,4 @@
 import 'dart:convert';
-// import 'package:flutter/widgets.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -17,7 +15,7 @@ class XenforoEventService {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
-      debugPrint('event info: ${response.body}');
+      // debugPrint('event info: ${response.body}');
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed with status code: ${response.statusCode}${response.body}');

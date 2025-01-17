@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/message/create_message.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
@@ -23,19 +24,10 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _setStatusBarStyle();
+    StatusBarUtil.setLightStatusBar();
     getUserById();
   }
 
-   void _setStatusBarStyle() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.black,  // Transparent status bar
-      statusBarIconBrightness: Brightness.light,  // Light icons for dark backgrounds
-      statusBarBrightness: Brightness.dark,  // Adjust for iOS
-    ),
-  );
-}
 
   Future<void> getUserById() async {
     try {
@@ -54,13 +46,10 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
-    if (_userDetails == null) {
-      return const Center(child: Text('Failed to load user details.'));
-    }
+    // if (_userDetails == null) {
+    //   return const Center(child: Text('Failed to load user details.'));
+    // }
 
     final user = _userDetails!['user'];
     final avatarUrl = user['avatar_urls']['o'] ?? 'https://picsum.photos/201/200';
@@ -77,102 +66,151 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
     final about = user['about'] ?? 'No about information provided.';
 
     return Scaffold(
-      body: SafeArea(child: 
-      SingleChildScrollView(
-        child: Column(
-          children: [
-            const CustomAppBarBody(
-            title: 'User Details',
-          ),
-            Stack(
-              children: [
-                Image.network(
-                  bannerUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  top: 100,
-                  left: 16,
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundImage: NetworkImage(avatarUrl),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Card(
-              margin: const EdgeInsets.all(16.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              elevation: 4.0,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Column(
+    body: SafeArea(
+      child: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _userDetails == null
+              ? const Center(child: Text('Failed to load user details.'))
+              : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const CustomAppBarBody(
+                        title: 'User Details',
+                      ),
+                      Stack(
                         children: [
-                          Text(
-                            fullName,
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          Image.network(
+                            bannerUrl,
+                            height: 200,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
                           ),
-                          Text('@$nickname • $isStaff', style: const TextStyle(color: Colors.grey)),
+                          Positioned(
+                            top: 100,
+                            left: 16,
+                            child: CircleAvatar(
+                              radius: 60,
+                              backgroundImage: NetworkImage(avatarUrl),
+                            ),
+                          ),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildPointTag('Message Count', messageCount.toString(), Colors.blue),
-                    _buildPointTag('Reaction Score', reactionScore.toString(), Colors.green),
-                    _buildPointTag('Trophy Points', trophyPoints.toString(), Colors.orange),
-                    _buildPointTag('Question Solutions', questionSolutionCount.toString(), Colors.purple),
-                    _buildPointTag('Vote Score', voteScore.toString(), Colors.red),
-                    const SizedBox(height: 16),
-                    Text(
-                      'About',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    Text(
-                      about,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 20),
-                    if (website != null && website.isNotEmpty)
-                      InkWell(
-                        onTap: () => _launchURL(website),
-                        child: Text(
-                          website,
-                          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                      const SizedBox(height: 20),
+                      Card(
+                        margin: const EdgeInsets.all(16.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16.0),
+                        ),
+                        elevation: 4.0,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      fullName,
+                                      style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text('@$nickname',
+                                            style: const TextStyle(
+                                                color: Colors.grey)),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: user['is_staff']
+                                                ? Colors.blue
+                                                : Colors.grey,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            user['is_staff']
+                                                ? 'Staff Member'
+                                                : 'Member',
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildPointTag(
+                                  'Message Count',
+                                  messageCount.toString(),
+                                  Colors.blue),
+                              _buildPointTag(
+                                  'Reaction Score',
+                                  reactionScore.toString(),
+                                  Colors.green),
+                              _buildPointTag(
+                                  'Trophy Points',
+                                  trophyPoints.toString(),
+                                  Colors.orange),
+                              _buildPointTag(
+                                  'Question Solutions',
+                                  questionSolutionCount.toString(),
+                                  Colors.purple),
+                              _buildPointTag(
+                                  'Vote Score', voteScore.toString(), Colors.red),
+                              const SizedBox(height: 16),
+                              Text(
+                                'About',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              Text(
+                                about,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 20),
+                              if (website.isNotEmpty)
+                                InkWell(
+                                  onTap: () => _launchURL(website),
+                                  child: Text(
+                                    website,
+                                    style: const TextStyle(
+                                        color: Colors.blue,
+                                        decoration: TextDecoration.underline),
+                                  ),
+                                ),
+                              const SizedBox(height: 20),
+                              CustomButton(
+                                label: 'Message',
+                                padding: 5.0,
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CreateMessageScreen(
+                                        recipientId: [widget.userId],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    const SizedBox(height: 20),
-                    CustomButton(
-                      label: 'Message',
-                      padding: 5.0,
-                      onPressed: () {
-                        Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CreateMessageScreen(
-                                recipientId: [widget.userId],
-                              ),
-                            ),
-                          );
-                      },
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      ),
-    );
+    ),
+  );
   }
 
   Widget _buildPointTag(String label, String value, Color color) {

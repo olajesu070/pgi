@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/services/api/xenforo_node_api.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -24,7 +25,7 @@ class _GuildState extends State<Guild> {
   @override
   void initState() {
     super.initState();
-     _setStatusBarStyle();
+     StatusBarUtil.setLightStatusBar();
     getNodeById();
 
    _controller = WebViewController()
@@ -48,16 +49,6 @@ class _GuildState extends State<Guild> {
   )
   ..loadRequest(Uri.parse('https://flutter.dev'));
   }
-
-  void _setStatusBarStyle() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.black,  // Transparent status bar
-      statusBarIconBrightness: Brightness.light,  // Light icons for dark backgrounds
-      statusBarBrightness: Brightness.dark,  // Adjust for iOS
-    ),
-  );
-}
 
   Future<void> getNodeById() async {
     try {

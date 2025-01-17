@@ -138,48 +138,82 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
-  // Widget to display categories
-  Widget _buildCategoriesList() {
-    if (mediaCategories.isEmpty) {
-      return const Center(child: Text('No categories available.'));
-    }
+ // Widget to display categories
+Widget _buildCategoriesList() {
+  if (mediaCategories.isEmpty) {
+    return const Center(child: Text('No categories available.'));
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: mediaCategories.length,
-      itemBuilder: (context, index) {
-        final category = mediaCategories[index];
+  return ListView.builder(
+    padding: const EdgeInsets.all(16),
+    itemCount: mediaCategories.length,
+    itemBuilder: (context, index) {
+      if (index == 0) {
+        
+      // Render normal category cards for other indices
+      final category = mediaCategories[index];
+        // Special "Show All" card at index 0
         return Card(
+          color: Colors.blueAccent, // Optional: Change card color to highlight
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: ListTile(
-            title: Text(category['title'] ?? 'Untitled Category',  style: const TextStyle(fontWeight: FontWeight.bold),),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-          Text('${category['media_count'] ?? 0} media items'),
-          Text('Allowed types: ${category['allowed_types']?.join(', ') ?? 'None'}'),
-           
-              ],
-
+            title: const Text(
+              'Show All Media',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            subtitle: const Text(
+              'View all media items across categories',
+              style: TextStyle(color: Colors.white70),
             ),
             onTap: () {
               Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => GalleryDetailScreen(
-              title: category['title'],
-              albumId: category['category_id'],
-              mediaType: 'category',
-            ),
-          ),
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GalleryDetailScreen(
+                    title: 'All Media',
+                    albumId: category['category_id'],
+                    mediaType: 'all',
+                  ),
+                ),
               );
             },
           ),
         );
-     
-      },
-    );
-  }
+      }
+
+      // Render normal category cards for other indices
+      final category = mediaCategories[index];
+      return Card(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        child: ListTile(
+          title: Text(
+            category['title'] ?? 'Untitled Category',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${category['media_count'] ?? 0} media items'),
+              Text('Allowed types: ${category['allowed_types']?.join(', ') ?? 'None'}'),
+            ],
+          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GalleryDetailScreen(
+                  title: category['title'],
+                  albumId: category['category_id'],
+                  mediaType: 'category',
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    },
+  );
+}
 
   
   // Widget to display albums

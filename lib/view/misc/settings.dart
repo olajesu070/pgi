@@ -4,6 +4,7 @@ import 'package:pgi/view/misc/edit_profile_screen.dart';
 import 'package:pgi/view/misc/policy.dart';
 import 'package:pgi/view/misc/terms_policy.dart';
 import 'package:pgi/view/misc/notification_screen.dart';
+import 'package:pgi/view/widgets/custom_app_bar.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -11,104 +12,94 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Settings'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Go back to the previous page
-          },
-        ),
-      ),
-      body: ListView(
-        children: [
-          // Account Section
-          _buildSection('Account', [
-            _buildListTile(
-              icon: Icons.person,
-              title: 'Edit Profile',
-              onTap: () {
-                 Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-                );
-              },
+      
+      body: SafeArea(
+        child: Column(
+          children: [
+             const CustomAppBarBody(
+              title: 'Settings',
             ),
-            // _buildListTile(
-            //   icon: Icons.security,
-            //   title: 'Security',
-            //   onTap: () {
-            //     // Navigate to security settings page
-            //   },
-            // ),
-            _buildListTile(
-              icon: Icons.notifications,
-              title: 'Notifications',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) =>  const NotificationScreen()),
-                );
-              },
-            ),
-            _buildListTile(
-              icon: Icons.lock,
-              title: 'Privacy',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
-                );
-              },
-            ),
-          ]),
+            Expanded(
+              child: ListView(
+              children: [
+                // Account Section
+                _buildSection('Account', [
+                  _buildListTile(
+                    icon: Icons.person,
+                    title: 'Edit Profile',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                      );
+                    },
+                  ),
+                  _buildListTile(
+                    icon: Icons.notifications,
+                    title: 'Notifications',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) =>  const NotificationScreen()),
+                      );
+                    },
+                  ),
+                  _buildListTile(
+                    icon: Icons.lock,
+                    title: 'Privacy',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                      );
+                    },
+                  ),
+                ]),
 
-          // Support & About Section
-          _buildSection('Support & About', [
-            _buildListTile(
-              icon: Icons.help,
-              title: 'Help & Support',
-              onTap: () {
-               Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) =>  ContactUsScreen()),
-                );
-              },
-            ),
-            _buildListTile(
-              icon: Icons.description,
-              title: 'Terms and Policies',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TermsAndConditionsScreen()),
-                );
-              },
-            ),
-          ]),
+                // Support & About Section
+                _buildSection('Support & About', [
+                  _buildListTile(
+                    icon: Icons.help,
+                    title: 'Help & Support',
+                    onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) =>  ContactUsScreen()),
+                      );
+                    },
+                  ),
+                  _buildListTile(
+                    icon: Icons.description,
+                    title: 'Terms and Policies',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const TermsAndConditionsScreen()),
+                      );
+                    },
+                  ),
+                ]),
 
-          // Actions Section
-          _buildSection('Actions', [
-            _buildListTile(
-              icon: Icons.report_problem,
-              title: 'Report a problem',
-              onTap: () {
-                 Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) =>  ContactUsScreen()),
-                );
-              },
+                // Actions Section
+                _buildSection('Actions', [
+                  _buildListTile(
+                    icon: Icons.report_problem,
+                    title: 'Report a problem',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) =>  ContactUsScreen()),
+                      );
+                    },
+                  ),
+                ]),
+              ],
             ),
-            // _buildListTile(
-            //   icon: Icons.exit_to_app,
-            //   title: 'Log out',
-            //   onTap: () {
-            //     // Log out action
-            //   },
-            // ),
-          ]),
-        ],
-      ),
+            )
+          ]
+        )
+      )
+      
     );
   }
 

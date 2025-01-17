@@ -102,6 +102,7 @@ Widget build(BuildContext context) {
     final userId = event['user_id'];
     final  username = event['username'] ?? 'Unknown';
     final message = event['message'] ?? 'No description provided.';
+    final isRsvp = event['is_rsvp_enabled'] ?? false;
     final dateRange = DateFormat('d MMM, yyyy').format(eventStartDate) +
         (eventStartDate == eventEndDate ? '' : ' - ${DateFormat('d MMM, yyyy').format(eventEndDate)}');
 
@@ -121,11 +122,13 @@ Widget build(BuildContext context) {
               title: eventTitle,
               date: dateRange,
               time: DateFormat('hh:mm a').format(eventStartDate),
+              endTime:DateFormat('hh:mm a').format(eventEndDate),
               centerName: categoryTitle,
               address: location,
               organizerName: username,
               eventDetails: message,
               userId: userId,
+              isRsvp: isRsvp,
             ),
           ),
         );

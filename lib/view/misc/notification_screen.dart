@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/services/api/xenforo_notification_service.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
 
@@ -19,18 +20,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
-    _setStatusBarStyle();
+   StatusBarUtil.setLightStatusBar();
     _fetchNotifications();
-  }
-
-  void _setStatusBarStyle() {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.black, // Dark background
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark, // For iOS
-      ),
-    );
   }
 
   Future<void> _fetchNotifications() async {
