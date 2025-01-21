@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/view/explore/oroganiser_detail_screen.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';

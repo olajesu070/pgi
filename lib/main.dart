@@ -85,7 +85,7 @@ Widget build(BuildContext context) {
   '/gallery': (context) => const SafeAreaWrapper(child: GalleryScreen()),
   '/messages': (context) => const SafeAreaWrapper(child: MessageScreen()),
   '/schedule': (context) => const SafeAreaWrapper(child: ScheduleScreen()),
-  '/contact': (context) => SafeAreaWrapper(child: ContactUsScreen()),
+  '/contact': (context) => const SafeAreaWrapper(child: ContactUsScreen()),
   '/settings': (context) => const SafeAreaWrapper(child: SettingsPage()),
   '/guild': (context) {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;  // Extract arguments

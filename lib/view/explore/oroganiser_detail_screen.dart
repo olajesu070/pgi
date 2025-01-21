@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/message/create_message.dart';

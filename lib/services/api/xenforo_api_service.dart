@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 class XenForoApiService {
   final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://pgi.org/api';
-  final String apiKey = dotenv.env['CLIENT_ID'] ?? '7887150025286687';
+  final String apiKey = dotenv.env['API_KEY'] ?? '7887150025286687';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
  
 
@@ -47,6 +47,7 @@ Future<Map<String, dynamic>> getForumThreads() async {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
+      // debugPrint('Response: ${response.body}');
       return jsonDecode(response.body);
     } else if (response.statusCode == 204) {
       debugPrint('No content returned (204)');
@@ -63,8 +64,6 @@ Future<Map<String, dynamic>> getForumThreads() async {
     throw Exception('Error occurred: $e');
   }
 }
-
-
 
   // Add more methods for other API endpoints as needed
 }

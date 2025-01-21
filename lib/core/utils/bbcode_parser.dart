@@ -4,11 +4,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 class BBCodeParser {
   // Method to convert BBCode to a list of formatted TextSpans
-  static List<TextSpan> parseBBCode(String message) {
+   static List<TextSpan> parseBBCode(String message) {
     final List<TextSpan> spans = [];
     final regex = RegExp(
-      r'(\[b\](.*?)\[/b\])|(\[i\](.*?)\[/i\])|(\[u\](.*?)\[/u\])|(\[quote.*?\](.*?)\[/quote\])|(\[user=\d+\](.*?)\[/user\])|(\[url=(.*?)\](.*?)\[/url\])',
-      caseSensitive: false,  // Handles both upper and lower case BBCode
+      r'(\[b\](.*?)\[/b\])|(\[i\](.*?)\[/i\])|(\[u\](.*?)\[/u\])|(\[quote.*?\](.*?)\[/quote\])|(\[user=\d+\](.*?)\[/user\])|(\[url=(.*?)\](.*?)\[/url\])|(\[url\](.*?)\[/url\])',
+      caseSensitive: false,
       dotAll: true,
     );
 
@@ -37,6 +37,13 @@ class BBCodeParser {
           style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
           recognizer: TapGestureRecognizer()..onTap = () => _launchURL(url!),
         ));
+      } else if (match.group(13) != null) {
+        final linkText = match.group(14);
+        spans.add(TextSpan(
+          text: linkText,
+          style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+          recognizer: TapGestureRecognizer()..onTap = () => _launchURL(linkText!),
+        ));
       }
 
       lastIndex = match.end;
@@ -64,6 +71,9 @@ class BBCodeParser {
       }
     }
   }
+
+ 
+
 }
 
 

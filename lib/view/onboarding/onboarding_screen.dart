@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pgi/services/api/oauth2_service.dart';
 
@@ -34,11 +35,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _initializeOAuth2Service() {
     _oauth2Service = OAuth2Service(
-      clientId: '3128580506330804',
-      clientSecret: 'h57Dml8kYuqgDhspqvQWN9CMGdQQm3_T',
-      authorizationEndpoint: 'https://pgi.org/oauth2/authorize',
-      tokenEndpoint: 'https://pgi.org/api/oauth2/token',
-      redirectUri: 'https://pgi.org/auth/signIn',
+      clientId: dotenv.env['CLIENT_ID'] ?? '3128580506330804',
+      clientSecret: dotenv.env['CLIENT_SECRET'] ?? 'h57Dml8kYuqgDhspqvQWN9CMGdQQm3_T',
+      authorizationEndpoint: dotenv.env['AUTHORIZATION_ENDPOINT'] ?? 'https://pgi.org/oauth2/authorize',
+      tokenEndpoint: dotenv.env['TOKEN_ENDPOINT'] ?? 'https://pgi.org/api/oauth2/token',
+      redirectUri: dotenv.env['REDIRECT_URI'] ?? 'https://pgi.org/auth/signIn',
       secureStorage: _secureStorage,
       onTokensUpdated: _checkAndRefreshToken,  // Automatically refresh tokens when updated
     );
@@ -69,16 +70,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         final expirationDate = DateTime.parse(expirationDateStr);
         if (DateTime.now().isAfter(expirationDate)) {
           await _oauth2Service.refreshAccessToken(context);
-          developer.log("Access token refreshed successfully.");
+          debugPrint("Access token refreshed successfully.");
         } else {
-          developer.log("Valid access token found. Proceeding to home.");
+          debugPrint("Valid access token found. Proceeding to home.");
           _oauth2Service.navigateToHome(context);
         }
       } else {
-        developer.log("No valid tokens found. User needs to log in.");
+        debugPrint("No valid tokens found. User needs to log in.");
       }
     } catch (e) {
-      developer.log("Error checking or refreshing token: $e");
+      debugPrint("Error checking or refreshing token: $e");
     } finally {
       _setLoading(false);
     }

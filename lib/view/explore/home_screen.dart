@@ -90,39 +90,37 @@ class _HomeScreenState extends State<HomeScreen> {
     final userDetails = userState.userDetails ?? {};
     return Scaffold(
       drawer: CustomDrawer(userDetails: userDetails),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Container(color: const Color(0xFFFFFFFF)),
-            _buildHeader(context),
-            _buildEdgeButtons(),
-            Padding(
-              padding: const EdgeInsets.only(top: 150), // Adjust based on overlay height
-              child: CustomScrollView(
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        SectionWidget(
-                          title: 'Upcoming Events',
-                          actionText: 'See All',
-                          onTap: () => Navigator.pushNamed(context, '/schedule'),
-                          content: _buildEventCards(),
-                        ),
-                        SectionWidget(
-                          title: 'Latest Posts',
-                          actionText: '',
-                          content: _buildPostCards(context),
-                        ),
-                      ]),
-                    ),
+      body: Stack(
+        children: [
+          Container(color: const Color(0xFFFFFFFF)),
+          _buildHeader(context),
+          _buildEdgeButtons(),
+          Padding(
+            padding: const EdgeInsets.only(top: 150), // Adjust based on overlay height
+            child: CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      SectionWidget(
+                        title: 'Upcoming Events',
+                        actionText: 'See All',
+                        onTap: () => Navigator.pushNamed(context, '/schedule'),
+                        content: _buildEventCards(),
+                      ),
+                      SectionWidget(
+                        title: 'Latest Posts',
+                        actionText: '',
+                        content: _buildPostCards(context),
+                      ),
+                    ]),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -132,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final userDetails = userState.userDetails ?? {};
     return Positioned(
-      top: 0,
+      top: -5,
       left: 0,
       right: 0,
       child: Container(
@@ -270,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildEdgeButtons() {
     return const Positioned(
-      top: 90,
+      top: 85,
       left: 16,
       right: 16,
       child: Row(

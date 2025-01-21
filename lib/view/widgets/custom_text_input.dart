@@ -6,6 +6,7 @@ class CustomTextInput extends StatefulWidget {
   final bool isPassword;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
+  final TextInputType? keyboardType;
   final FormFieldValidator<String>? validator;
   final int? maxLines;
 
@@ -16,6 +17,7 @@ class CustomTextInput extends StatefulWidget {
     this.isPassword = false,
     this.controller,
     this.onChanged,
+    this.keyboardType,
     this.validator,
     this.maxLines,
   });
@@ -68,6 +70,7 @@ class _CustomTextInputState extends State<CustomTextInput> {
         fillColor: Colors.transparent,
       ),
       onChanged: widget.onChanged,
+      keyboardType: widget.keyboardType,
       validator: widget.validator,
       maxLines: widget.isPassword ? 1 : widget.maxLines, // Conditional maxLines
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'image_viewer.dart';
 import 'video_player_screen.dart';
@@ -27,6 +28,7 @@ class _GalleryDetailScreenState extends State<GalleryDetailScreen> {
   @override
   void initState() {
     super.initState();
+    StatusBarUtil.setLightStatusBar();
     if(widget.mediaType == 'album'){
       _fetchMedia();
     }else{

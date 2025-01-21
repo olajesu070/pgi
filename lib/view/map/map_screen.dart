@@ -1,11 +1,11 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:pgi/services/api/xenforo_map_api.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
+import 'package:pgi/view/widgets/map_widget.dart';
 
 const apiKey = "SpBinAbdDaWb5uNURKTM";
-const styleUrl = "https://api.maptiler.com/maps/hybrid/style.json"; // Use a visible style
+const styleUrl = "https://api.maptiler.com/maps/hybrid/style.json";
 
 class EventMapScreen extends StatefulWidget {
   const EventMapScreen({super.key});
@@ -18,150 +18,118 @@ class _EventMapScreenState extends State<EventMapScreen> {
   MapLibreMapController? _mapController;
   final MapService mapService = MapService();
   List<Map<String, dynamic>> geoJsonData = [];
-  bool isLoading = true;
-  String errorMessage = '';
+  Map<int, bool> categoryVisibility = {};
+  Map<int, String> categoryColors = {};
 
   @override
   void initState() {
     super.initState();
+    _fetchMapData();
   }
 
-  Future<void> _fetchMapCoordinates() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = '';
-    });
+  Future<void> _fetchMapData() async {
+    final data = await mapService.getMapCoordinate();
+    final categories = data['map']['categories'] ?? [];
+    final features = data['map']['geojson']['features'] ?? [];
 
-    try {
-      final data = await mapService.getMapCoordinate();
-      final mapData = data['map'];
-      if (mapData == null) {
-        setState(() {
-          geoJsonData = [];
-          errorMessage = 'No map data available.';
-          isLoading = false;
-        });
-        return;
-      }
-
-      final geoJson = mapData['geojson'];
-      final features = geoJson != null ? geoJson['features'] : null;
-
-      if (features == null || features.isEmpty) {
-        setState(() {
-          geoJsonData = [];
-          errorMessage = 'No features available in map data.';
-          isLoading = false;
-        });
-        return;
-      }
-
-      geoJsonData = List<Map<String, dynamic>>.from(features);
-      for (var geoJson in geoJsonData) {
-        _addGeoJsonToMap(geoJson);
-      }
-
-      setState(() {
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        errorMessage = '$e Failed to load data. Please try again later.';
-        isLoading = false;
-      });
+    // Initialize category visibility and color map
+    for (var category in categories) {
+      int categoryId = category['category_id'];
+      String color = "#${category['color']}";
+      categoryVisibility[categoryId] = true;
+      categoryColors[categoryId] = color;
     }
+
+    geoJsonData = List<Map<String, dynamic>>.from(features);
+    setState(() {});
   }
 
-  void _addGeoJsonToMap(Map<String, dynamic> feature) {
-    if (_mapController == null) return;
+  void _toggleCategoryVisibility(int categoryId) {
+    setState(() {
+      categoryVisibility[categoryId] = !(categoryVisibility[categoryId] ?? true);
+      _updateMapFeatures();
+    });
+  }
 
+    void _updateMapFeatures() {
+      if (_mapController == null) return; // Prevent null controller usage
+      _mapController!.clearLines();
+      _mapController!.clearSymbols();
+      _mapController!.clearFills();
+      
+      for (var feature in geoJsonData) {
+        int categoryId = feature['properties']['category_id'];
+        if (categoryVisibility[categoryId] == true) {
+          _addGeoJsonToMap(feature, categoryColors[categoryId] ?? "#FFFFFF");
+        }
+      }
+    }
+
+  void _addGeoJsonToMap(Map<String, dynamic> feature, String color) {
     final geometry = feature['geometry'];
     if (geometry == null) return;
 
     final type = geometry['type'];
     final coordinates = geometry['coordinates'];
 
-    if (type == null || coordinates == null) return;
-
     switch (type) {
       case 'Point':
-        _addPointToMap(coordinates);
+        _addPointToMap(coordinates, color);
         break;
       case 'LineString':
-        _addLineStringToMap(coordinates);
+        _addLineStringToMap(coordinates, color);
         break;
       case 'Polygon':
-        _addPolygonToMap(coordinates);
+        _addPolygonToMap(coordinates, color);
         break;
     }
   }
 
-  void _addPointToMap(List<dynamic> coordinates) {
+  void _addPointToMap(List<dynamic> coordinates, String color) {
     _mapController?.addSymbol(SymbolOptions(
       geometry: LatLng(coordinates[1], coordinates[0]),
-      iconImage: 'default-marker',  // Replace with a working icon from your style
+      iconImage: 'default-marker',
+      iconColor: color,
     ));
   }
 
-  void _addLineStringToMap(List<dynamic> coordinates) {
-    List<LatLng> latLngList = coordinates
-        .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
-        .toList();
+  void _addLineStringToMap(List<dynamic> coordinates, String color) {
+    List<LatLng> latLngList = coordinates.map((coord) => LatLng(coord[1], coord[0])).toList();
     _mapController?.addLine(LineOptions(
       geometry: latLngList,
-      lineColor: "#FF0000", // Bright red for visibility
+      lineColor: color,
       lineWidth: 4.0,
-      lineOpacity: 0.8,
     ));
   }
+  
 
-  void _addPolygonToMap(List<dynamic> coordinates) {
-    List<LatLng> latLngList = coordinates[0]
-        .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
-        .toList();
-    _mapController?.addFill(FillOptions(
-      geometry: [latLngList],
-      fillColor: "#00FF00",  // Bright green for visibility
-      fillOpacity: 0.5,
-    ));
-  }
+  void _addPolygonToMap(List<dynamic> coordinates, String color) {
+  if (coordinates.isEmpty || coordinates[0].isEmpty) return;
+  
+  List<LatLng> latLngList = coordinates[0]
+      .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+      .toList();
 
-  void _onMapCreated(MapLibreMapController controller) {
-    _mapController = controller;
-    _fetchMapCoordinates();
-  }
+    // debugPrint('Print latlng: $latLngList');
+  
+  _mapController?.addFill(FillOptions(
+    geometry: [latLngList],
+    fillColor: color,
+    fillOpacity: 0.5,
+  ));
+}
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: Column(
         children: [
-          const CustomAppBarBody(
-            title: 'Event Map',
-          ),
+          CustomAppBarBody(title: 'Event Map', showBackButton: false,),
           Expanded(
             child: Stack(
               children: [
-                MapLibreMap(
-                  styleString: "$styleUrl?key=$apiKey",
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(46.42300325164794, -94.2815193249055),
-                    zoom: 15.0,
-                  ),
-                  onMapCreated: _onMapCreated,
-                ),
-                if (isLoading)
-                  const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                if (errorMessage.isNotEmpty)
-                  Center(
-                    child: Text(
-                      errorMessage,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-              ],
+                  MapWidget()
+                ],
             ),
           ),
         ],

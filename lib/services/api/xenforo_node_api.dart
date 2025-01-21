@@ -12,7 +12,7 @@ class NodeServices {
    // Helper method to handle API responses
   Future<dynamic> _handleResponse(http.Response response) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      // debugPrint('Node info: ${response.body}');
+      debugPrint('Node info: ${response.body}');
       return response.body.isNotEmpty ? jsonDecode(response.body) : null;
     } else {
       throw Exception('Error: ${response.statusCode} - ${response.body}');
@@ -24,6 +24,24 @@ class NodeServices {
 
 Future<Map<String, dynamic>> getNodeById(int id) async {
     final url = Uri.parse('$baseUrl/nodes/$id/');
+    final accessToken = await _secureStorage.read(key: 'accessToken');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'XF-Api-Key': apiKey,
+        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      },
+    );
+    return await _handleResponse(response);
+  }
+
+// GET nodes/
+// Gets all node
+
+Future<Map<String, dynamic>> getNodes() async {
+    final url = Uri.parse('$baseUrl/nodes/');
     final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.get(

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:pgi/core/utils/bbcode_formatter.dart';
 import 'package:pgi/core/utils/bbcode_parser.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/services/api/xenforo_thread_api.dart';
@@ -106,7 +106,7 @@ class _DiscussionDetailScreenState extends State<DiscussionDetailScreen> {
       _messageController.text = '$_quotedText\n${_messageController.text}';
     }
 
-        final String message = _messageController.text;
+        final String message = BBCodeFormatter.formatMessageWithBBCode(_messageController.text);
       _messageController.clear();
 
     try {

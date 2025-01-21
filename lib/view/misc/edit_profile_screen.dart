@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/data/models/user_state.dart';

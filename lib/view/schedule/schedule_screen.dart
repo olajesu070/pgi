@@ -58,6 +58,7 @@ Widget build(BuildContext context) {
       children: [
          const CustomAppBarBody(
             title: 'Events',
+            showBackButton: false,
           ),
         Expanded(
           child: ListView.builder(

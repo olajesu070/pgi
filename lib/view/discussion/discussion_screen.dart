@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pgi/services/api/xenforo_api_service.dart';
+import 'package:pgi/view/discussion/create_discussion.dart';
 // import 'package:pgi/view/misc/post_thread_screen.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:pgi/view/widgets/discussion_card.dart';
@@ -93,17 +94,17 @@ Widget build(BuildContext context) {
      )
      ],
     ),
-    // floatingActionButton: FloatingActionButton(
-    //   onPressed: () {
-    //     Navigator.push(
-    //       context,
-    //       MaterialPageRoute(builder: (context) => const PostThreadScreen()),
-    //     );
-    //   },
-    //   tooltip: 'Post a Thread',
-    //   backgroundColor: const Color(0xE40A5338),
-    //   child: const Icon(Icons.add, color: Colors.white),
-    // ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) =>  CreateDiscussionScreen()),
+        );
+      },
+      tooltip: 'Post a Thread',
+      backgroundColor: const Color(0xE40A5338),
+      child: const Icon(Icons.add, color: Colors.white),
+    ),
   );
 }
 
