@@ -1,7 +1,7 @@
-import 'dart:developer' as developer;
+import 'dart:ui';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pgi/services/api/oauth2_service.dart';
 
@@ -22,9 +22,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeOAuth2Service();
+    _oauth2Service = OAuth2Service(onTokensUpdated: _onTokensUpdated);
     _initializeAppLinks();
-    _checkAndRefreshToken();
+    _autoLogin();  // Automatically check and refresh tokens
+  }
+
+  void _onTokensUpdated() {
+    // Handle token updates, e.g., navigate to the main app screen
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   void _setLoading(bool loading) {
@@ -33,54 +38,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  void _initializeOAuth2Service() {
-    _oauth2Service = OAuth2Service(
-      clientId: dotenv.env['CLIENT_ID'] ?? '3128580506330804',
-      clientSecret: dotenv.env['CLIENT_SECRET'] ?? 'h57Dml8kYuqgDhspqvQWN9CMGdQQm3_T',
-      authorizationEndpoint: dotenv.env['AUTHORIZATION_ENDPOINT'] ?? 'https://pgi.org/oauth2/authorize',
-      tokenEndpoint: dotenv.env['TOKEN_ENDPOINT'] ?? 'https://pgi.org/api/oauth2/token',
-      redirectUri: dotenv.env['REDIRECT_URI'] ?? 'https://pgi.org/auth/signIn',
-      secureStorage: _secureStorage,
-      onTokensUpdated: _checkAndRefreshToken,  // Automatically refresh tokens when updated
-    );
-  }
-
   void _initializeAppLinks() {
     _appLinks.getInitialLink().then((uri) {
       if (uri != null) {
-        developer.log("Initial deep link received: $uri");
+        debugPrint("Initial deep link received: $uri");
         _oauth2Service.handleRedirect(uri, context);
       }
     });
 
     _appLinks.uriLinkStream.listen((uri) {
-      developer.log("Deep link received: $uri");
+      debugPrint("Deep link received: $uri");
       _oauth2Service.handleRedirect(uri, context);
     });
   }
 
-  Future<void> _checkAndRefreshToken() async {
+   void _autoLogin() async {
     _setLoading(true);
     try {
-      final accessToken = await _secureStorage.read(key: 'accessToken');
-      final refreshToken = await _secureStorage.read(key: 'refreshToken');
-      final expirationDateStr = await _secureStorage.read(key: 'expirationDate');
-
-      if (accessToken != null && refreshToken != null && expirationDateStr != null) {
-        final expirationDate = DateTime.parse(expirationDateStr);
-        if (DateTime.now().isAfter(expirationDate)) {
-          await _oauth2Service.refreshAccessToken(context);
-          debugPrint("Access token refreshed successfully.");
-        } else {
-          debugPrint("Valid access token found. Proceeding to home.");
-          _oauth2Service.navigateToHome(context);
-        }
-      } else {
-        debugPrint("No valid tokens found. User needs to log in.");
-      }
+      await _oauth2Service.ensureValidAccessToken(context);
     } catch (e) {
-      debugPrint("Error checking or refreshing token: $e");
-    } finally {
+      debugPrint("Error during auto-login: $e");
       _setLoading(false);
     }
   }
@@ -90,10 +67,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     try {
       await _oauth2Service.startOAuthFlow(context);
     } catch (e) {
-      developer.log("Error during login: $e");
+      debugPrint("Error during login: $e");
     } finally {
       _setLoading(false);
     }
+  }
+
+  void _signUp() {
+    // Placeholder for sign-up logic or navigation
+    Navigator.of(context).pushNamed('/signup'); // Adjust with your sign-up route
   }
 
   @override
@@ -134,6 +116,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         onPressed: _login,
                         child: const Text(
                           'Login here',
+                          style: TextStyle(fontSize: 18, color: Color(0xFFDBDBDB)),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _signUp,
+                        child: const Text(
+                          'Sign Up',
                           style: TextStyle(fontSize: 18, color: Color(0xFFDBDBDB)),
                         ),
                       ),

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/services/api/oauth2_service.dart';
 
 class CustomDrawer extends StatelessWidget {
   final Map<String, dynamic> userDetails;
+  final OAuth2Service oauth2Service = OAuth2Service(onTokensUpdated: () {
+    // Handle token update if needed
+  });
 
-  const CustomDrawer({
+  CustomDrawer({
     super.key,
     required this.userDetails,
   });
@@ -17,15 +21,16 @@ class CustomDrawer extends StatelessWidget {
     final String avatarUrl = userDetails['me']['avatar_urls']['o'] ?? 'https://picsum.photos/200/300';
     final String membershipType = userDetails['membershipType'] ?? 'Guest';
     final bool isActiveMember = userDetails['me']['activity_visible'] ?? false;
+
     return Drawer(
       backgroundColor: const Color(0xFFFFFFFF),
       child: ListView(
         padding: EdgeInsets.zero,
         children: <Widget>[
-        DrawerHeader(
-          decoration: const BoxDecoration(
-            color: Color(0xFFFFFFFF),
-          ),
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFFFF),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -44,116 +49,66 @@ class CustomDrawer extends StatelessWidget {
                 ),
               ],
             ),
-        ),
-
-          // My Profile tile
-          Container(
-            color: Colors.white,
-            child: ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('My Profile'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/profile');
-              },
-            ),
           ),
-          const SizedBox(height: 10), // Space between tiles
-            // Messages tile with padding and background color
-          Container(
-            color: Colors.white,
-            child: ListTile(
-              leading: const Icon(Icons.chat_bubble_outline),
-              title: const Text('Messages'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/messages');
-              },
-            ),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('My Profile'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/profile');
+            },
           ),
-          const SizedBox(height: 10), // Space between tiles
-
-          // Contact Us tile
-          Container(
-            color: Colors.white,
-            child: ListTile(
-              leading: const Icon(Icons.mail_outline),
-              title: const Text('Contact Us'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/contact');
-              },
-            ),
+          ListTile(
+            leading: const Icon(Icons.chat_bubble_outline),
+            title: const Text('Messages'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/messages');
+            },
           ),
-          const SizedBox(height: 10), // Space between tiles
-
-          // Settings tile
-          Container(
-            color: Colors.white,
-            child: ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(context, '/settings');
-              },
-            ),
+          ListTile(
+            leading: const Icon(Icons.mail_outline),
+            title: const Text('Contact Us'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/contact');
+            },
           ),
-           // Sign Out tile
-          Container(
-            color: Colors.white,
-            child: ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/signIn');
-              },
-            ),
+          ListTile(
+            leading: const Icon(Icons.settings),
+            title: const Text('Settings'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/settings');
+            },
           ),
-          const SizedBox(height: 20), 
-
-          // Membership label
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Sign Out'),
+            onTap: () async {
+              // Navigator.pop(context);
+              await oauth2Service.logout(context);
+            },
+          ),
+          const Spacer(),
           Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-                decoration: BoxDecoration(
-                  color: const Color(0xE0BDEC66),
-                  borderRadius: BorderRadius.circular(0),
-                ),
-                child: Text(
-                  isActiveMember ? 'Active PGI Member' : 'Guest',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+            decoration: BoxDecoration(
+              color: const Color(0xE0BDEC66),
+              borderRadius: BorderRadius.circular(0),
+            ),
+            child: Text(
+              isActiveMember ? 'Active PGI Member' : 'Guest',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
+            ),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatItem(String label, int value) {
-    return Column(
-      children: [
-        Text(
-          value.toString(),
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
-      ],
     );
   }
 }

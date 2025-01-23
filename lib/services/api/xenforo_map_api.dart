@@ -24,7 +24,10 @@ class MapService {
       print('map info: ${response.body}');
       logResponseToFile(response.body);
       return response.body.isNotEmpty ? jsonDecode(response.body) : null;
-    } else {
+    }else if(response.statusCode == 401){
+      //  Navigator.pushNamed(context, '/profile');
+    } 
+    else {
       throw Exception('Error: ${response.statusCode} - ${response.body}');
     }
   }
