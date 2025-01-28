@@ -98,7 +98,7 @@ Widget build(BuildContext context) {
       onPressed: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) =>  CreateDiscussionScreen()),
+          MaterialPageRoute(builder: (context) =>  const CreateDiscussionScreen()),
         );
       },
       tooltip: 'Post a Thread',

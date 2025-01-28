@@ -85,7 +85,7 @@ class ConversationService {
 
   // Log the response for debugging purposes
   debugPrint('Response status: ${response.statusCode}');
-  debugPrint('Response body: ${response.body}');
+  debugPrint('Response body: ${response}');
 
   return await _handleResponse(response);
 }

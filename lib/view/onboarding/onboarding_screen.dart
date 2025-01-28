@@ -1,4 +1,3 @@
-import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
@@ -24,8 +23,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.initState();
     _oauth2Service = OAuth2Service(onTokensUpdated: _onTokensUpdated);
     _initializeAppLinks();
-    _autoLogin();  // Automatically check and refresh tokens
+    _showStorageContents();
+    _autoLogin();  
   }
+
+  Future<void> _showStorageContents() async {
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    // Retrieve all stored key-value pairs
+    final allStorage = await _secureStorage.readAll();
+    debugPrint('Secure Storage Contents:');
+    allStorage.forEach((key, value) {
+      debugPrint('$key: $value');
+    });
+  } catch (e) {
+    debugPrint('Error reading storage: $e');
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
+  }
+}
 
   void _onTokensUpdated() {
     // Handle token updates, e.g., navigate to the main app screen
@@ -55,7 +76,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
    void _autoLogin() async {
     _setLoading(true);
     try {
-      await _oauth2Service.ensureValidAccessToken(context);
+      final accessToken = await _secureStorage.read(key: 'accessToken');
+      final refreshToken = await _secureStorage.read(key: 'refreshToken');
+      final expirationDateStr = await _secureStorage.read(key: 'expirationDate');
+
+       if (accessToken != null && refreshToken != null && expirationDateStr != null) {
+        final expirationDate = DateTime.parse(expirationDateStr);
+        debugPrint("date now is ${DateTime.now()} and expireDate is $expirationDate");
+        if (DateTime.now().isAfter(expirationDate)) {
+          await _oauth2Service.refreshAccessToken(context);
+          debugPrint("Access token refreshed successfully.");
+        } else {
+          debugPrint("Valid access token found. Proceeding to home.");
+          _oauth2Service.navigateToHome(context);
+        }
+      } else {
+        debugPrint("No valid tokens found. User needs to log in.");
+      }
+
+      // await _oauth2Service.ensureValidAccessToken(context);
     } catch (e) {
       debugPrint("Error during auto-login: $e");
       _setLoading(false);
@@ -75,7 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _signUp() {
     // Placeholder for sign-up logic or navigation
-    Navigator.of(context).pushNamed('/signup'); // Adjust with your sign-up route
+    Navigator.of(context).pushNamed('/signUp'); 
   }
 
   @override

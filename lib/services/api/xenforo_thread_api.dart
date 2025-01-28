@@ -5,8 +5,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
 import 'package:path_provider/path_provider.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class ThreadService {
   final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://pgi.org/api';
@@ -76,6 +77,9 @@ Future<void> logResponseToFile(String responseBody) async {
     if (response.statusCode >= 200 && response.statusCode < 300) {
       // debugPrint('post info: ${response.body}');
       return response.body.isNotEmpty ? jsonDecode(response.body) : null;
+    }else if (response.statusCode == 401) {
+     // Navigate to the login screen
+      Navigator.of(navigatorKey.currentContext!).pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false); 
     } else {
       throw Exception('Error: ${response.statusCode} - ${response.body}');
     }

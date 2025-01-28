@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/core/utils/badge.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
+import 'package:pgi/core/utils/user_group.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/message/create_message.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
@@ -46,16 +48,22 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
   @override
   Widget build(BuildContext context) {
 
-    // if (_userDetails == null) {
-    //   return const Center(child: Text('Failed to load user details.'));
-    // }
+   final userGroup = UserGroup.getUserGroupById(5); 
+
+     if (userGroup != null) {
+    print('User Group: ${userGroup.text}');
+     print('CSS Class: ${userGroup.cssClass}'); 
+
+  } else {
+    print('User group not found.');
+  }
 
     final user = _userDetails!['user'];
     final avatarUrl = user['avatar_urls']['o'] ?? 'https://picsum.photos/201/200';
     final bannerUrl = user['profile_banner_urls']['l'] ?? 'https://picsum.photos/201/300';
     final fullName = '${user['custom_fields']['firstname']} ${user['custom_fields']['lastname']}';
     final nickname = user['username'] ?? 'No nickname';
-    final isStaff = user['is_staff'] ? 'Staff Member' : 'Member';
+    // final isStaff = user['is_staff'] ? 'Staff Member' : 'Member';
     final website = user['website'] ?? '';
     final messageCount = user['message_count'] ?? 0;
     final reactionScore = user['reaction_score'] ?? 0;
@@ -116,32 +124,23 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 8),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                    Column(
                                       children: [
-                                        Text('@$nickname',
-                                            style: const TextStyle(
-                                                color: Colors.grey)),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: user['is_staff']
-                                                ? Colors.blue
-                                                : Colors.grey,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                                      Text('@$nickname',
+                                        style: const TextStyle(
+                                          color: Colors.grey)),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 8.0,
+                                        runSpacing: 4.0,
+                                        alignment: WrapAlignment.center,
+                                        children: [
+                                          BadgeUI(
+                                            text: userGroup.text,
+                                            cssClass: userGroup.cssClass,
                                           ),
-                                          child: Text(
-                                            user['is_staff']
-                                                ? 'Staff Member'
-                                                : 'Member',
-                                            style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
+                                        ],
+                                      ),
                                       ],
                                     ),
                                   ],

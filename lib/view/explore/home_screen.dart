@@ -6,6 +6,7 @@ import 'package:pgi/core/constants/app_colors.dart';
 import 'package:pgi/data/models/user_state.dart';
 import 'package:pgi/services/api/xenforo_api_service.dart';
 import 'package:pgi/services/api/xenforo_event_service.dart';
+import 'package:pgi/services/api/xenforo_notification_service.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/discussion/discussion.dart';
 import 'package:pgi/view/widgets/custom_drawer.dart';
@@ -27,17 +28,20 @@ class _HomeScreenState extends State<HomeScreen> {
   final XenForoApiService apiService = XenForoApiService();
   final XenforoEventService eventService = XenforoEventService();
   final XenForoUserApi userApiService = XenForoUserApi();
+  final NotificationService _notificationService = NotificationService();
 
   List<Map<String, dynamic>> discussions = [];
   List<dynamic> events = [];
   bool isLoading = true;
   String errorMessage = '';
+  int notificationCount = 0; // To store the unread notification count
 
   @override
   void initState() {
     super.initState();
     _fetchDiscussions();
     _fetchEvents();
+    _fetchNotifications();
     // Fetch user details on page load
     Provider.of<UserState>(context, listen: false).fetchUserDetails();
   }
@@ -65,6 +69,22 @@ class _HomeScreenState extends State<HomeScreen> {
         errorMessage = 'Failed to load discussions. Please try again later.';
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchNotifications() async {
+    setState(() => isLoading = true);
+    try {
+      final fetchedNotifications = await _notificationService.getAlerts();
+      setState(() {
+        notificationCount = fetchedNotifications['pagination']['total'] ?? 0; // Extract the total count
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load notifications: $e')),
+      );
     }
   }
 
@@ -188,78 +208,49 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                GestureDetector(
-                  onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                    builder: (context) => const NotificationScreen(),
+               GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationScreen(),
+                        ),
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        const CircleAvatar(
+                          backgroundColor: Color(0x49FFFFFF),
+                          child: Icon(Icons.notifications_none, color: Colors.white),
+                        ),
+                        if (notificationCount > 0) // Show badge only if there are unread notifications
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                notificationCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  );
-                  },
-                  child: const CircleAvatar(
-                  backgroundColor: Color(0x49FFFFFF),
-                  child: Icon(Icons.notifications_none, color: Colors.white),
                   ),
-                ),
+
               ],
             ),
             const SizedBox(height: 20),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: [
-            //     // Expanded(
-            //     //   child: TextField(
-            //     //     decoration: InputDecoration(
-            //     //       hintText: 'Search...',
-            //     //       hintStyle: const TextStyle(color: Colors.white),
-            //     //       prefixIcon: const Icon(Icons.search, color: Colors.white),
-            //     //       filled: true,
-            //     //       fillColor: Colors.transparent,
-            //     //       border: OutlineInputBorder(
-            //     //         borderRadius: BorderRadius.circular(30),
-            //     //         borderSide: BorderSide.none,
-            //     //       ),
-            //     //       contentPadding: const EdgeInsets.symmetric(vertical: 12),
-            //     //     ),
-            //     //     style: const TextStyle(color: Colors.white),
-            //     //   ),
-            //     // ),
-            //     // const SizedBox(width: 10),
-            //     // ElevatedButton(
-            //     //   onPressed: () {},
-            //     //   style: ElevatedButton.styleFrom(
-            //     //     shape: RoundedRectangleBorder(
-            //     //       borderRadius: BorderRadius.circular(30),
-            //     //     ),
-            //     //     backgroundColor: const Color(0xFF0A5338),
-            //     //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            //     //   ),
-            //     //   child: Row(
-            //     //     mainAxisSize: MainAxisSize.min,
-            //     //     children: [
-            //     //       Container(
-            //     //         decoration: const BoxDecoration(
-            //     //           color: Colors.white,
-            //     //           shape: BoxShape.circle,
-            //     //         ),
-            //     //         padding: const EdgeInsets.all(5),
-            //     //         child: const Icon(
-            //     //           Icons.filter_list,
-            //     //           color: Color(0xFF0A5338),
-            //     //           size: 20,
-            //     //         ),
-            //     //       ),
-            //     //       const SizedBox(width: 5),
-            //     //       const Text(
-            //     //         'Filter',
-            //     //         style: TextStyle(color: Colors.white),
-            //     //       ),
-            //     //     ],
-            //     //   ),
-            //     // ),
-            //   ],
-            // ),
+           
           ],
         ),
       ),

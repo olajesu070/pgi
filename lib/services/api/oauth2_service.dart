@@ -22,6 +22,7 @@ class OAuth2Service {
     Navigator.of(context).pushReplacementNamed('/home');
   }
 
+
   String _generateState() {
     final random = Random.secure();
     final values = List<int>.generate(32, (i) => random.nextInt(256));
@@ -80,26 +81,40 @@ class OAuth2Service {
   }
 
   Future<void> refreshAccessToken(BuildContext context) async {
-    final refreshToken = await _secureStorage.read(key: 'refreshToken');
-    if (refreshToken == null) {
-      throw Exception('Refresh token not available.');
-    }
-    final response = await http.post(Uri.parse(_tokenEndpoint), headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Basic ${base64Encode(utf8.encode('$_clientId:$_clientSecret'))}',
-    }, body: {
-      'grant_type': 'refresh_token',
-      'refresh_token': refreshToken,
-      'client_id': _clientId,
-      'client_secret': _clientSecret,
-    });
+    try {
+      final refreshToken = await _secureStorage.read(key: 'refreshToken');
+      if (refreshToken == null) {
+        debugPrint('No refresh token found.');
+        throw Exception('Refresh token not available.');
+      }
 
-    if (response.statusCode == 200) {
-      await _updateTokens(response.body, context);
-    } else {
-      throw Exception('Failed to refresh access token');
+      final response = await http.post(
+        Uri.parse(_tokenEndpoint),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': 'Basic ${base64Encode(utf8.encode('$_clientId:$_clientSecret'))}',
+        },
+        body: {
+          'grant_type': 'refresh_token',
+          'refresh_token': refreshToken,
+          'client_id': _clientId,
+          'client_secret': _clientSecret,
+          'redirect_uri': _redirectUri,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        await _updateTokens(response.body, context);
+      } else {
+        debugPrint('Failed to refresh token: ${response.body}');
+        throw Exception('Failed to refresh access token: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error refreshing access token: $e');
+      throw Exception('Error refreshing access token: $e');
     }
   }
+
 
   Future<void> _updateTokens(String responseBody, BuildContext context) async {
     final responseData = json.decode(responseBody);
@@ -117,10 +132,11 @@ class OAuth2Service {
 
   Future<void> ensureValidAccessToken(BuildContext context) async {
     final expirationDateStr = await _secureStorage.read(key: 'expirationDate');
+    print('expireDate:$expirationDateStr');
     if (expirationDateStr != null && DateTime.now().isAfter(DateTime.parse(expirationDateStr))) {
       await refreshAccessToken(context);
     } else {
-      navigateToHome(context);
+      startOAuthFlow(context);
     }
   }
 

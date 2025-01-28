@@ -5,6 +5,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 
+import 'package:pgi/data/models/user.dart';
+
 class XenForoUserApi {
   final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://pgi.org/api';
   final String apiKey = dotenv.env['CLIENT_ID'] ?? '7887150025286687';
@@ -16,7 +18,7 @@ class XenForoUserApi {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
-      //  debugPrint('user info: ${response.body}');
+       debugPrint('user info: ${response.body}');
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed with status code: ${response.statusCode}');
@@ -163,6 +165,47 @@ class XenForoUserApi {
       rethrow;
     }
   }
+/// Create a new user
+Future<User> createUser(Map<String, dynamic> data) async {
+  final url = Uri.parse('$baseUrl/users');
+  final accessToken = await _secureStorage.read(key: 'accessToken');
+
+  // Validate required fields
+  if (!data.containsKey('username') || !data.containsKey('email') || !data.containsKey('password')) {
+    throw Exception('Username, email, and password are required fields.');
+  }
+
+  // Set default values for optional fields
+  data.putIfAbsent('option[creation_watch_state]', () => 'watch_no_email');
+  data.putIfAbsent('option[interaction_watch_state]', () => 'watch_no_email');
+  data.putIfAbsent('visible', () => true);
+  data.putIfAbsent('activity_visible', () => true);
+  data.putIfAbsent('timezone', () => 'UTC');
+  data.putIfAbsent('user_state', () => 'valid');
+
+  try {
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'XF-Api-Key': apiKey,
+        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode(data),
+    );
+
+    // Parse the response
+    final responseData = await _handleResponse(response);
+    if (responseData['success'] == true) {
+      return User.fromJson(responseData['user']);
+    } else {
+      throw Exception('Failed to create user: ${responseData['error']}');
+    }
+  } catch (e) {
+    debugPrint('Error creating user: $e');
+    rethrow;
+  }
+}
 
 
 /// Fetch information about a specific user by ID

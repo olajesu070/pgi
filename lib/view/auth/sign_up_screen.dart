@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
-import 'package:pgi/view/misc/policy.dart';
+import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
 import 'package:pgi/view/widgets/custom_text_input.dart';
+
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
 
@@ -16,6 +16,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool acceptBylaws = false;
   bool agreeTerms = false;
 
+  final XenForoUserApi _userApi = XenForoUserApi();
+
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
@@ -25,7 +27,110 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController stateController = TextEditingController();
   final TextEditingController postalCodeController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
-  final TextEditingController countryController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  String passwordStrength = 'Enter a password'; // For password strength indicator
+  String? selectedDay;
+  String? selectedMonth;
+  String? selectedYear;
+
+  final List<String> days = List.generate(31, (index) => (index + 1).toString());
+  final List<String> months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+  ];
+  final List<String> years =
+      List.generate(100, (index) => (DateTime.now().year - index).toString());
+
+  @override
+  void initState() {
+    super.initState();
+    passwordController.addListener(_checkPasswordStrength);
+  }
+
+  void _checkPasswordStrength() {
+  final password = passwordController.text;
+
+  if (password.isEmpty) {
+    setState(() {
+      passwordStrength = 'Enter a password';
+    });
+    return;
+  }
+
+  // Regular expressions to check for different character types
+  final hasUppercase = password.contains(RegExp(r'[A-Z]')); // At least one uppercase letter
+  final hasLowercase = password.contains(RegExp(r'[a-z]')); 
+  final hasDigits = password.contains(RegExp(r'[0-9]')); // At least one digit
+  final hasSpecialCharacters = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')); // At least one special character
+  final hasMinLength = password.length >= 8; // Minimum length of 8 characters
+
+  if (password.length < 6) {
+    setState(() {
+      passwordStrength = 'Weak';
+    });
+  } else if (hasMinLength && hasUppercase && hasDigits ) {
+    setState(() {
+      passwordStrength = 'Medium';
+    });
+  } else if (hasMinLength && hasUppercase && hasDigits && hasSpecialCharacters &&hasLowercase) {
+    setState(() {
+      passwordStrength = 'Strong';
+    });
+  } else {
+    setState(() {
+      passwordStrength = 'Weak';
+    });
+  }
+}
+
+  void _createUser() async {
+    final data = {
+      'username': usernameController.text.trim(),
+      'email': emailController.text.trim(),
+      'password': passwordController.text,
+      'dob[day]': selectedDay, // Use the selected day
+      'dob[month]': selectedMonth, // Use the selected month
+      'dob[year]': selectedYear, // Use the selected year
+      'custom_fields': {
+          'first_name': firstNameController.text.trim(),
+          'last_name': lastNameController.text.trim(),
+          'phone': phoneController.text.trim(),
+          'address': addressController.text.trim(),
+          'city': cityController.text.trim(),
+          'state': stateController.text.trim(),
+          'postal_code': postalCodeController.text.trim(),
+        },
+    };
+
+  try {
+    // Call the API to create the user
+    final user = await _userApi.createUser(data);
+
+    // Show success message and navigate away
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('User ${user.username} created successfully!')),
+    );
+    Navigator.pop(context);
+  } catch (e) {
+    // Handle and display errors
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error creating user: $e')),
+    );
+  }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +140,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-       
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -44,24 +148,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Logo
-                Center(
-                  child: Image.asset(
-                    'assets/logo.png', // Update with your actual logo path
-                    height: 40,
-                  ),
-                ),
-                const SizedBox(height: 10),
+            Center(
+              child: Image.asset(
+                'assets/logo.png',
+                height: 40,
+              ),
+            ),
+            const SizedBox(height: 10),
 
-                // Title
-                const Text(
-                  'Sign Up',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
+            // Title
+            const Text(
+              'Sign Up',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
 
             // Username Input
             CustomTextInput(
@@ -87,19 +191,81 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 10),
 
-            // Date of Birth with Dropdowns
-            // Row(
-            //   children: [
-            //     Expanded(child: CustomTextInput(hintText: 'Month')),
-            //     const SizedBox(width: 10),
-            //     Expanded(child: CustomTextInput(hintText: 'Day')),
-            //     const SizedBox(width: 10),
-            //     Expanded(child: CustomTextInput(hintText: 'Year')),
-            //   ],
-            // ),
-            // const SizedBox(height: 10),
+            // Date of Birth
+            const Text(
+              'Date of Birth',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedDay,
+                    items: days
+                        .map((day) => DropdownMenuItem(
+                              value: day,
+                              child: Text(day),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedDay = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Day',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedMonth,
+                    items: months
+                        .map((month) => DropdownMenuItem(
+                              value: month,
+                              child: Text(month),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedMonth = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Month',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: selectedYear,
+                    items: years
+                        .map((year) => DropdownMenuItem(
+                              value: year,
+                              child: Text(year),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedYear = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Year',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
 
-            // First Name and Last Name 
+            // First Name and Last Name
             Row(
               children: [
                 Expanded(child: CustomTextInput(hintText: 'First Name', controller: firstNameController)),
@@ -127,141 +293,39 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             const SizedBox(height: 10),
 
-            // City and Country Inputs
-            Row(
-              children: [
-                Expanded(child: CustomTextInput(hintText: 'City', controller: cityController)),
-                const SizedBox(width: 10),
-                Expanded(child: CustomTextInput(hintText: 'Country', controller: countryController)),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Membership Materials
-            const Text(
-              'Membership Materials',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            // City Input
+            CustomTextInput(
+              hintText: 'City',
+              leftIcon: Icons.location_city,
+              controller: cityController,
             ),
             const SizedBox(height: 10),
-            CheckboxListTile(
-              value: bulletinSelected,
-              onChanged: (value) {
-                setState(() {
-                  bulletinSelected = value!;
-                });
-              },
-              title: const Text('Bulletin', style: TextStyle(fontSize: 10),),
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: const Color(0xFF0A5338)
-            ),
-            CheckboxListTile(
-              value: calendarSelected,
-              onChanged: (value) {
-                setState(() {
-                  calendarSelected = value!;
-                });
-              },
-              title: const Text('Calendar', style: TextStyle(fontSize: 10)),
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: const Color(0xFF0A5338)
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Check the boxes to the materials you wish to physically receive in print once you are a PGI member. Note: you may change these settings at any time.',
-              style: TextStyle(color: Colors.grey, fontSize: 10),
-            ),
-            const SizedBox(height: 20),
 
-            // Agreement Checkboxes
-            CheckboxListTile(
-              value: acceptBylaws,
-              onChanged: (value) {
-                setState(() {
-                  acceptBylaws = value!;
-                });
-              },
-              title: RichText(
-                text: TextSpan(
-                  children: [
-                    const TextSpan(text: 'I accept the ', style: TextStyle(color: Colors.black)),
-                    TextSpan(
-                      text: 'PGI Bylaws',
-                      style: const TextStyle(color: Colors.blue),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          // Navigate to Bylaws page or show dialog
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const PrivacyPolicyScreen(),
-                            ),
-                          );
-
-                        },
-                    ),
-                  ],
-                ),
+            // Password Input
+            CustomTextInput(
+              hintText: 'Password',
+              leftIcon: Icons.lock,
+              controller: passwordController,
+              isPassword: true,
+              
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Password Strength: $passwordStrength',
+              style: TextStyle(
+                color: passwordStrength == 'Weak'
+                    ? Colors.red
+                    : passwordStrength == 'Medium'
+                        ? Colors.orange
+                        : Colors.green,
               ),
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: const Color(0xFF0A5338)
-            ),
-            CheckboxListTile(
-              value: agreeTerms,
-              onChanged: (value) {
-                setState(() {
-                  agreeTerms = value!;
-                });
-              },
-              title: RichText(
-                text: TextSpan(
-                  children: [
-                    const TextSpan(text: 'I agree to the ', style: TextStyle(color: Colors.black)),
-                    TextSpan(
-                      text: 'Terms',
-                      style: const TextStyle(color: Colors.blue),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          // Navigate to Terms page or show dialog
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                             builder: (context) => const PrivacyPolicyScreen(),
-                            ),
-                          );
-
-                        },
-                    ),
-                    const TextSpan(text: ' and ', style: TextStyle(color: Colors.black)),
-                    TextSpan(
-                      text: 'Privacy Policy',
-                      style: const TextStyle(color: Colors.blue),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          // Navigate to Privacy Policy page or show dialog
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                             builder: (context) => const PrivacyPolicyScreen(),
-                            ),
-                          );
-
-                        },
-                    ),
-                  ],
-                ),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: const Color(0xFF0A5338)
             ),
             const SizedBox(height: 20),
 
             // Register Button
             CustomButton(
               label: 'Register',
-              onPressed: () {
-                // Handle registration logic
-              },
+              onPressed: _createUser
             ),
           ],
         ),

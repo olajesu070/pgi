@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
 import 'package:pgi/services/api/xenforo_node_api.dart';
+import 'package:pgi/services/api/xenforo_thread_api.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
+import 'package:pgi/view/widgets/custom_button.dart';
 import 'package:pgi/view/widgets/custom_text_input.dart';
 
 class CreateDiscussionScreen extends StatefulWidget {
@@ -13,6 +15,7 @@ class CreateDiscussionScreen extends StatefulWidget {
 
 class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
   final NodeServices apiService = NodeServices();
+  final ThreadService threadService = ThreadService();
   
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _titleController = TextEditingController();
@@ -65,6 +68,67 @@ class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
     }
   }
 
+  Future<void> _createDiscussion() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final Map<String, dynamic> discussionData = {
+      'nodeId': _selectedForumId,
+      'title': _titleController.text,
+      'message': _bodyController.text,
+      'discussionType': _selectedType,
+      'customFields':''
+     
+    };
+
+    if (_selectedType == 'Poll') {
+      discussionData['customFields'] = {
+        'question': _pollQuestionController.text,
+        'responses': _pollResponses.map((controller) => controller.text).toList(),
+        'close_after_days': int.tryParse(_closePollDaysController.text) ?? 0,
+        'allow_vote_change': _allowVoteChange,
+        'display_vote_publicly': _displayVotePublicly,
+        'allow_result_without_voting': _allowResultWithoutVoting,
+        'watch_thread': _watchThread,
+        'email_notification': _emailNotification,
+      };
+    }
+
+    try {
+      final response = await threadService.createThread(
+        nodeId: int.parse(_selectedForumId!), 
+        title: _titleController.text, 
+        message: _bodyController.text,
+        discussionType: _selectedType,
+        discussionOpen: true,
+        customFields: _selectedType == 'Poll' ? {
+          'question': _pollQuestionController.text,
+          'responses': _pollResponses.map((controller) => controller.text).toList(),
+          'close_after_days': int.tryParse(_closePollDaysController.text) ?? 0,
+          'allow_vote_change': _allowVoteChange,
+          'display_vote_publicly': _displayVotePublicly,
+          'allow_result_without_voting': _allowResultWithoutVoting,
+          'watch_thread': _watchThread,
+          'email_notification': _emailNotification,
+        } : {
+          'watch_thread': _watchThread,
+          'email_notification': _emailNotification,
+        }
+        );
+      if (response['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Discussion created successfully!')),
+        );
+        Navigator.pop(context);
+      } else {
+        throw Exception('Failed to create discussion');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -90,11 +154,7 @@ class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
                         const SizedBox(height: 16),
                         _buildTypeSelector(),
                         const SizedBox(height: 16),
-                        // TextFormField(
-                        //   controller: _titleController,
-                        //   decoration: const InputDecoration(labelText: 'Title'),
-                        //   validator: (value) => value == null || value.isEmpty ? 'Title is required' : null,
-                        // ),
+                     
                         CustomTextInput(
                           hintText: 'Title',
                           leftIcon: Icons.title,
@@ -107,10 +167,10 @@ class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
                         if (_selectedType == 'Poll') _buildPollOptions(),
                         _buildCheckboxOptions(),
                         const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _submitForm,
-                          child: const Text('Create'),
-                        ),
+                        CustomButton(
+                        label: 'Create',
+                        onPressed: _submitForm
+                        )
                       ],
                     ),
                   ),
@@ -182,6 +242,7 @@ class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
       child: RadioListTile<String>(
         title: Text(type, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),),
         value: type,
+        activeColor: Color(0xFF0A5338),
         groupValue: _selectedType,
         onChanged: (value) => setState(() => _selectedType = value ?? 'Discussion'),
       ),
@@ -242,16 +303,19 @@ class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
         SwitchListTile(
           title: const Text('Allow voters to change vote'),
           value: _allowVoteChange,
+          activeTrackColor: Color(0xFF0A5338),
           onChanged: (value) => setState(() => _allowVoteChange = value),
         ),
         SwitchListTile(
           title: const Text('Display vote publicly'),
           value: _displayVotePublicly,
+          activeTrackColor: Color(0xFF0A5338),
           onChanged: (value) => setState(() => _displayVotePublicly = value),
         ),
         SwitchListTile(
           title: const Text('Allow results to be viewed without voting'),
           value: _allowResultWithoutVoting,
+          activeTrackColor: Color(0xFF0A5338),
           onChanged: (value) => setState(() => _allowResultWithoutVoting = value),
         ),
       ],
@@ -264,11 +328,13 @@ class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
         CheckboxListTile(
           title: const Text('Watch thread'),
           value: _watchThread,
+          activeColor: Color(0xFF0A5338),
           onChanged: (value) => setState(() => _watchThread = value ?? false),
         ),
         CheckboxListTile(
           title: const Text('Receive email notifications'),
           value: _emailNotification,
+          activeColor: Color(0xFF0A5338),
           onChanged: (value) => setState(() => _emailNotification = value ?? false),
         ),
       ],

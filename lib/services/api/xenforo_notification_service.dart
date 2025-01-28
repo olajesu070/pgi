@@ -1,7 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:pgi/core/utils/api_handle_response.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class NotificationService {
   final String baseUrl = dotenv.env['BASE_URL'] ?? 'https://pgi.org/api';
@@ -9,13 +13,18 @@ class NotificationService {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   // Helper method to handle API responses
-  Future<dynamic> _handleResponse(http.Response response) async {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return response.body.isNotEmpty ? jsonDecode(response.body) : null;
-    } else {
-      throw Exception('Error: ${response.statusCode} - ${response.body}');
-    }
-  }
+  // Future<dynamic> _handleResponse(http.Response response) async {
+  //   if (response.statusCode >= 200 && response.statusCode < 300) {
+  //     debugPrint('response: ${response.body}');
+  //     return response.body.isNotEmpty ? jsonDecode(response.body) : null;
+  //   } else if (response.statusCode == 401) {
+  //     // Navigate to the login screen
+  //     Navigator.of(navigatorKey.currentContext!).pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
+  //     throw Exception('Unauthorized: ${response.statusCode} - ${response.body}');
+  //   } else {
+  //     throw Exception('Error: ${response.statusCode} - ${response.body}');
+  //   }
+  // }
 
   /// Fetches the list of alerts with optional filters.
   Future<Map<String, dynamic>> getAlerts({int page = 1, int? cutoff, bool? unviewed, bool? unread}) async {
@@ -33,7 +42,7 @@ class NotificationService {
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
     });
 
-    return await _handleResponse(response);
+    return await ApiResponseHelper.handleResponse(response);
   }
 
   /// Gets information about a specific alert by its ID.
@@ -47,7 +56,7 @@ class NotificationService {
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
     });
 
-    return await _handleResponse(response);
+    return await ApiResponseHelper.handleResponse(response);
   }
 
   /// Marks an alert as read, unread, or viewed by its ID.
@@ -87,6 +96,6 @@ class NotificationService {
       'viewed': viewed,
     }));
 
-    return await _handleResponse(response) != null;
+    return await ApiResponseHelper.handleResponse(response) != null;
   }
 }

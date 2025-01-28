@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pgi/services/api/xenforo_media_service.dart';
+import 'package:pgi/view/gallery/media_upload_screen.dart';
 import 'package:pgi/view/widgets/gallery_card.dart';
 import 'package:pgi/view/widgets/gallery_details_screen.dart';
 
@@ -62,68 +63,68 @@ class _GalleryScreenState extends State<GalleryScreen> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Gallery', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),textAlign: TextAlign.center,),
-          backgroundColor: const Color(0xBE669999),
-            centerTitle: true,
-          elevation: 0,
-        bottom: PreferredSize(
-  preferredSize: const Size.fromHeight(60.0), // Adjust height as needed
-  child: Container(
-    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Adjust spacing
-    padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 8), // Adjust spacing
-    decoration: BoxDecoration(
-      color: const Color(0x45AFAEAE), // Gray background color
-      borderRadius: BorderRadius.circular(30), // Rounded corners
-      
-    ),
-    child: TabBar(
-      dividerColor: Colors.transparent,
-      indicator: BoxDecoration(
-        color: Colors.white, // White color for the active tab
-        borderRadius: BorderRadius.circular(25), // Rounded indicator
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.4),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      labelColor: Colors.black,
-      unselectedLabelColor: Colors.black.withOpacity(0.6),
-      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      tabs:  [
-        Container(
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0x00FFFFFF), // Background hint color for unselected tab
-                    borderRadius: BorderRadius.circular(20),
+              appBar: AppBar(
+                title: const Text('Gallery', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),textAlign: TextAlign.center,),
+                backgroundColor: const Color(0xBE669999),
+                  centerTitle: true,
+                elevation: 0,
+              bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60.0), // Adjust height as needed
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Adjust spacing
+                      padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 8), // Adjust spacing
+                      decoration: BoxDecoration(
+                        color: const Color(0x45AFAEAE), // Gray background color
+                        borderRadius: BorderRadius.circular(30), // Rounded corners
+                  
+                    ),
+                    child: TabBar(
+                      dividerColor: Colors.transparent,
+                      indicator: BoxDecoration(
+                        color: Colors.white, // White color for the active tab
+                        borderRadius: BorderRadius.circular(25), // Rounded indicator
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.4),
+                            spreadRadius: 1,
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      labelColor: Colors.black,
+                      unselectedLabelColor: Colors.black.withOpacity(0.6),
+                      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      tabs:  [
+                        Container(
+                                  height: 40,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x00FFFFFF), // Background hint color for unselected tab
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text('Categories'),
+                                ),
+                                Container(
+                                  height: 40,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x00FFFFFF),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text('Albums'),
+                                ),
+                      ],
+                      indicatorColor: Colors.transparent,
+                    ),
                   ),
-                  child: const Text('Categories'),
                 ),
-                Container(
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: const Color(0x00FFFFFF),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text('Albums'),
-                ),
-      ],
-      indicatorColor: Colors.transparent,
-    ),
-  ),
-),
 
-        ),
-        body: SafeArea(
-          child: isLoading
+                    ),
+              body: SafeArea(
+              child: isLoading
               ? const Center(child: CircularProgressIndicator())
               : TabBarView(
                   children: [
@@ -133,7 +134,18 @@ class _GalleryScreenState extends State<GalleryScreen> {
                     _buildAlbumsList(),
                   ],
                 ),
-        ),
+              ),
+
+          floatingActionButton: FloatingActionButton(
+            onPressed: (){
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context)=> MediaUploadPage(categories: mediaCategories,)),
+                );
+            },
+            backgroundColor: const Color(0xE40A5338),
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
       ),
     );
   }

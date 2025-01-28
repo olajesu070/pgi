@@ -53,8 +53,20 @@ class _NotificationScreenState extends State<NotificationScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const CustomAppBarBody(
+            CustomAppBarBody(
             title: 'Notifications',
+            actions: [
+                GestureDetector(
+                onTap: markAllAsRead,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                  'Mark All as Read',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                ),
+            ],
           ),
           Expanded(
            child: isLoading
@@ -79,43 +91,41 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                   notification['event_date'] * 1000)
                               .toLocal()
                           : null;
-                      return Card(
-                        elevation: 3,
-                        shape: RoundedRectangleBorder(
+                        return Dismissible(
+                        key: Key(notification['alert_id'].toString()),
+                        onDismissed: (direction) {
+                          setState(() {
+                          notifications.removeAt(index);
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Notification dismissed')),
+                          );
+                        },
+                        background: Container(color: Colors.red),
+                        child: Card(
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: ListTile(
+                          ),
+                          child: ListTile(
                           leading: CircleAvatar(
                             backgroundImage: NetworkImage(user['avatar_urls']['s'] ?? ''),
                           ),
                           title: Text(
                             notification['alert_text'] ?? 'Untitled Notification',
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: notification['auto_read'] ? Colors.grey : Colors.black,
+                            fontWeight: FontWeight.bold,
+                            color: notification['auto_read'] ? Colors.grey : Colors.black,
                             ),
                           ),
-                          // subtitle: Text(eventDate != null ? eventDate.toString() : 'Unknown date'),
                           subtitle: Text(eventDate != null ? '${DateFormat('hh:mm a').format(eventDate)} on ${DateFormat('d MMM, yyyy').format(eventDate)}' : 'Unknown date'),
-                         
-                          onTap: () {
-                            // Navigate to the URL of the notification
-                            final alertUrl = notification['alert_url'];
-                            if (alertUrl != null && alertUrl.isNotEmpty) {
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => NotificationDetailScreen(url: alertUrl),
-                              //   ),
-                              // );
-                            }
-                          },
                           trailing: Icon(
                             notification['auto_read'] ? Icons.check_circle : Icons.circle,
                             color: notification['auto_read'] ? Colors.green : Colors.red,
                           ),
+                          ),
                         ),
-                      );
+                        );
                     },
                   ),
                 ),

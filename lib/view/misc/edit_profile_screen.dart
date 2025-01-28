@@ -153,6 +153,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _firstname = value;
                         });
                       },
+                      enabled: false,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your first name';
@@ -173,6 +174,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _lastname = value;
                         });
                       },
+                      enabled: false,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your last name';
@@ -193,6 +195,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _email = value;
                         });
                       },
+                      enabled: false,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
@@ -215,6 +218,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           _bio = value;
                         });
                       },
+                      enabled: false,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your bio';
