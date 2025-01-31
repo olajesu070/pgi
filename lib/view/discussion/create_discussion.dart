@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
+import 'package:pgi/data/models/drop_list_model.dart';
 import 'package:pgi/services/api/xenforo_node_api.dart';
 import 'package:pgi/services/api/xenforo_thread_api.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
@@ -186,42 +187,10 @@ class _CreateDiscussionScreenState extends State<CreateDiscussionScreen> {
   Widget _buildForumDropdown() {
   return SizedBox(
     width: double.infinity, // Ensures it takes full width
-    child: DropdownButtonFormField<String>(
-      style: const TextStyle(color: Colors.black),
-      decoration: InputDecoration(
-        hintStyle: const TextStyle(color: Colors.grey),
-        prefixIcon: const Icon(
-          Icons.forum,
-          color: Color(0xFFE4DFDF),
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: Color(0xFFE4DFDF)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: Color(0xFFE4DFDF)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: Color(0xFF0A5338)),
-        ),
-        filled: true,
-        fillColor: Colors.transparent,
-      ),
-      value: _selectedForumId,
-      hint: const Text('Select Forum'),
-      onChanged: (value) => setState(() => _selectedForumId = value),
-      items: forums
-          .map((forum) => DropdownMenuItem<String>(
-                value: forum['id'],
-                child: Text(forum['title']),
-              ))
-          .toList(),
-      validator: (value) => value == null ? 'Please select a forum' : null,
-      dropdownColor: Colors.white,
-      isExpanded: false,  // Avoid stretching the dropdown items
-      itemHeight: 48.0,   // Compact height for each item
+    child: SelectDropList(
+      OptionItem(id: _selectedForumId ?? '', title: forums.firstWhere((forum) => forum['id'] == _selectedForumId, orElse: () => {'title': 'Select Forum'})['title']),
+      DropListModel(forums.map((forum) => OptionItem(id: forum['id'], title: forum['title'])).toList()),
+      (optionItem) => setState(() => _selectedForumId = optionItem.id),
     ),
   );
 }

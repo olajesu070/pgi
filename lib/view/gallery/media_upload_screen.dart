@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pgi/core/utils/status_bar_util.dart';
+import 'package:pgi/data/models/drop_list_model.dart';
+import 'package:pgi/services/api/xenforo_media_service.dart';
 import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
 import 'package:pgi/view/widgets/custom_text_input.dart';
@@ -21,7 +23,7 @@ class _MediaUploadPageState extends State<MediaUploadPage> {
   final TextEditingController _albumNameController = TextEditingController();
   final TextEditingController _albumDescriptionController = TextEditingController();
   List<File> _selectedFiles = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
 
     @override
   void initState() {
@@ -33,142 +35,109 @@ class _MediaUploadPageState extends State<MediaUploadPage> {
   Widget build(BuildContext context) {
    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Upload Media'),
-      ),
       body: SafeArea(
-        child: _isLoading
-       ? const Center(child: CircularProgressIndicator())
-       : Column(
+      child: Column(
         children: [
-           const CustomAppBarBody(
-            title: 'Upload Media',
-          ),
-      Expanded(
-        child: Padding(
+        const CustomAppBarBody(
+          title: 'Upload Media',
+        ),
+        Expanded(
+          child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Dropdown to select album
-             DropdownButtonFormField<int>(
-                style: const TextStyle(color: Colors.black),
-                decoration: InputDecoration(
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  prefixIcon: const Icon(
-                    Icons.album,
-                    color: Color(0xFFE4DFDF),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(color: Color(0xFFE4DFDF)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(color: Color(0xFFE4DFDF)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: const BorderSide(color: Color(0xFF0A5338)),
-                  ),
-                  filled: true,
-                  fillColor: Colors.transparent,
+            // Dropdown to select album
+            SelectDropList(
+              OptionItem(id: '0', title: 'Select a category'),
+              DropListModel([
+              ...widget.categories.map((category) => OptionItem(id: category['category_id'].toString(), title: category['title'])).toList(),
+              OptionItem(id: '-1', title: 'Create new album'),
+              ]),
+              (optionItem) {
+              setState(() {
+                if (optionItem.id == '-1') {
+                _selectedAlbum = -1;
+                _isCreatingNewAlbum = true;
+                } else {
+                _selectedAlbum = int.parse(optionItem.id);
+                _isCreatingNewAlbum = false;
+                }
+              });
+              },
+            ),
+            const SizedBox(height: 16),
+            // Create new album form
+            if (_selectedAlbum == -1 || _isCreatingNewAlbum)
+              Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomTextInput(
+                hintText: 'Album Name',
+                leftIcon: Icons.title,
+                controller: _albumNameController,
+                validator: (value) => value == null || value.isEmpty ? 'Album name is required' : null,
                 ),
-                value: _selectedAlbum,
-                hint: const Text('Select a category'),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedAlbum = value; 
-                    _isCreatingNewAlbum = false; 
-                  });
-                },
-                items: widget.categories
-                    .map((category) => DropdownMenuItem<int>(
-                          value: category['category_id'],
-                          child: Text(category['title']), // Display the category title
-                        ))
-                    .toList()
-                  ..add(
-                    const DropdownMenuItem<int>(
-                      value: -1, // Special value for creating a new category
-                      child: Text("Create New Category"),
-                    ),
-                  ),
-              ),
-              const SizedBox(height: 16),
-        
-              // Create new album form
-              if (_selectedAlbum == -1 || _isCreatingNewAlbum)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CustomTextInput(
-                      hintText: 'Album Name',
-                      leftIcon: Icons.title,
-                      controller: _albumNameController,
-                      validator: (value) => value == null || value.isEmpty ? 'Album name is required' : null,
-                    ),
-                    const SizedBox(height: 8),
-                    CustomTextInput(
-                      hintText: 'Album Description',
-                      leftIcon: Icons.title,
-                      maxLines: 3,
-                      controller: _albumDescriptionController,
-                    ),
-                    const SizedBox(height: 16),
-                  ],
+                const SizedBox(height: 8),
+                CustomTextInput(
+                hintText: 'Album Description',
+                leftIcon: Icons.title,
+                maxLines: 3,
+                controller: _albumDescriptionController,
                 ),
-        
-              // File picker button
-              Center(
-                child: ElevatedButton.icon(
-                onPressed: _pickFiles,
-                icon: const Icon(Icons.add_photo_alternate, color: Color(0xFF0A5338)),
-                label: const Text('Select Photos/Videos', style: TextStyle(color: Color(0xFF0A5338))),
+                const SizedBox(height: 16),
+              ],
+              ),
+            // File picker button
+            Center(
+              child: ElevatedButton.icon(
+              onPressed: _pickFiles,
+              icon: const Icon(Icons.add_photo_alternate, color: Color(0xFF0A5338)),
+              label: const Text('Select Photos/Videos', style: TextStyle(color: Color(0xFF0A5338))),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Selected file preview
+            Expanded(
+              child: _selectedFiles.isEmpty
+                ? const Center(child: Text('No files selected'))
+                : ListView.builder(
+                  itemCount: _selectedFiles.length,
+                  itemBuilder: (context, index) {
+                  final file = _selectedFiles[index];
+                  return ListTile(
+                    leading: file.path.endsWith('.mp4')
+                      ? const Icon(Icons.videocam)
+                      : const Icon(Icons.photo),
+                    title: Text(file.path.split('/').last),
+                    trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      setState(() {
+                      _selectedFiles.removeAt(index);
+                      });
+                    },
+                    ),
+                  );
+                  },
                 ),
-              ),
-              const SizedBox(height: 16),
-        
-              // Selected file preview
-              Expanded(
-                child: _selectedFiles.isEmpty
-                    ? const Center(child: Text('No files selected'))
-                    : ListView.builder(
-                        itemCount: _selectedFiles.length,
-                        itemBuilder: (context, index) {
-                          final file = _selectedFiles[index];
-                          return ListTile(
-                            leading: file.path.endsWith('.mp4')
-                                ? const Icon(Icons.videocam)
-                                : const Icon(Icons.photo),
-                            title: Text(file.path.split('/').last),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () {
-                                setState(() {
-                                  _selectedFiles.removeAt(index);
-                                });
-                              },
-                            ),
-                          );
-                        },
-                      ),
-              ),
-        
-              // Submit button
-              CustomButton(
-                label: 'Upload Media',
-                onPressed: _uploadMedia
-                )
+            ),
+            // Submit button
+            CustomButton(
+              label: 'Upload Media',
+              onPressed: _uploadMedia,
+            ),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator()),
             ],
           ),
+          ),
         ),
+        ],
       ),
-      ],
-    ),
       ),
     );
-  }
+    }
 
   Future<void> _pickFiles() async {
     final result = await FilePicker.platform.pickFiles(
@@ -207,16 +176,24 @@ class _MediaUploadPageState extends State<MediaUploadPage> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     // Handle file upload logic
     try {
       // Prepare the album info
-      final albumId = _selectedAlbum != "create_new"
-          ? _selectedAlbum.toString()
-          : await _createAlbum(_albumNameController.text, _albumDescriptionController.text);
+      final albumId = _isCreatingNewAlbum
+        ? await _createAlbum(_albumNameController.text, _albumDescriptionController.text)
+        : _selectedAlbum.toString();
 
-      // Upload each file (replace this with actual API logic)
+      // Upload each file
       for (var file in _selectedFiles) {
-        await _uploadFile(file, albumId);
+        if (_isCreatingNewAlbum) {
+          await _uploadFile(file, 'album_id=$albumId');
+        } else {
+          await _uploadFile(file, 'category_id=${_selectedAlbum.toString()}');
+        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -227,19 +204,25 @@ class _MediaUploadPageState extends State<MediaUploadPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to upload media: $e')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   Future<String> _createAlbum(String name, String description) async {
-    // API call to create album
-    // Replace this with actual API logic
-    return Future.value("new_album_id");
+    final mediaService = MediaService();
+    final response = await mediaService.createMediaAlbum(name: name, description: description);
+    return response['album']['album_id'].toString();
   }
 
-  Future<void> _uploadFile(File file, String albumId) async {
-    // API call to upload a file to the specified album
-    // Replace this with actual API logic
-    await Future.delayed(const Duration(seconds: 1));
+  Future<void> _uploadFile(File file, String id) async {
+    final mediaService = MediaService();
+    await mediaService.uploadMedia(
+      filePath: file.path,
+      albumId: id,
+    );
   }
 
   void _clearForm() {

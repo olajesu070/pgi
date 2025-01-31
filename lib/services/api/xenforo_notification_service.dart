@@ -12,19 +12,6 @@ class NotificationService {
   final String apiKey = dotenv.env['CLIENT_ID'] ?? '7887150025286687';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  // Helper method to handle API responses
-  // Future<dynamic> _handleResponse(http.Response response) async {
-  //   if (response.statusCode >= 200 && response.statusCode < 300) {
-  //     debugPrint('response: ${response.body}');
-  //     return response.body.isNotEmpty ? jsonDecode(response.body) : null;
-  //   } else if (response.statusCode == 401) {
-  //     // Navigate to the login screen
-  //     Navigator.of(navigatorKey.currentContext!).pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
-  //     throw Exception('Unauthorized: ${response.statusCode} - ${response.body}');
-  //   } else {
-  //     throw Exception('Error: ${response.statusCode} - ${response.body}');
-  //   }
-  // }
 
   /// Fetches the list of alerts with optional filters.
   Future<Map<String, dynamic>> getAlerts({int page = 1, int? cutoff, bool? unviewed, bool? unread}) async {
@@ -61,18 +48,18 @@ class NotificationService {
 
   /// Marks an alert as read, unread, or viewed by its ID.
   Future<bool> markAlert(String id, {bool? read, bool? unread, bool? viewed}) async {
-    final Uri uri = Uri.parse('$baseUrl/alerts/$id/mark');
+    final Uri uri = Uri.parse('$baseUrl/alerts/$id/mark').replace(queryParameters: {
+      if (read != null) 'read': read.toString(),
+      if (unread != null) 'unread': unread.toString(),
+      if (viewed != null) 'viewed': viewed.toString(),
+    });
     final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.post(uri, headers: {
       'Content-Type': 'application/json',
       'XF-Api-Key': apiKey,
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-    }, body: jsonEncode({
-      if (read != null) 'read': read,
-      if (unread != null) 'unread': unread,
-      if (viewed != null) 'viewed': viewed,
-    }));
+    });
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -83,18 +70,18 @@ class NotificationService {
   }
 
   /// Marks all alerts as read or viewed.
-  Future<bool> markAllAlerts({bool read = false, bool viewed = false}) async {
-    final Uri uri = Uri.parse('$baseUrl/alerts/mark-all');
+  Future<bool> markAllAlerts({bool read = false, bool viewed = true}) async {
+    final Uri uri = Uri.parse('$baseUrl/alerts/mark-all').replace(queryParameters: {
+      'read': read.toString(),
+      'viewed': viewed.toString(),
+    });
     final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.post(uri, headers: {
       'Content-Type': 'application/json',
       'XF-Api-Key': apiKey,
       if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-    }, body: jsonEncode({
-      'read': read,
-      'viewed': viewed,
-    }));
+    });
 
     return await ApiResponseHelper.handleResponse(response) != null;
   }

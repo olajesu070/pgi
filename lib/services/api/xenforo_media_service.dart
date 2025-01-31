@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +17,7 @@ class MediaService {
       //  debugPrint('mediainfo: ${response.body}');
       return jsonDecode(response.body);
     } else {
+      print('error: ${response.body}');
       throw Exception('Failed with status code: ${response.statusCode}');
     }
   }
@@ -53,8 +55,8 @@ class MediaService {
   }
 
   // POST /media/
-  Future<dynamic> createMedia(Map<String, dynamic> mediaData) async {
-    final url = Uri.parse('$baseUrl/media/');
+  Future<dynamic> createMedia(int id, Map<String, dynamic> mediaData) async {
+    final url = Uri.parse('$baseUrl/media/$id');
      final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.post(
@@ -67,6 +69,43 @@ class MediaService {
       body: jsonEncode(mediaData),
     );
     return await _handleResponse(response);
+  }
+  // POST /media/ (Upload Image)
+  Future<dynamic> uploadMedia({
+    required String filePath,
+    String? categoryId,
+    String? albumId,
+    String? description,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/media${categoryId != null ? '?$categoryId' : albumId != null ? '?$albumId' : ''}',
+    );
+    final accessToken = await _secureStorage.read(key: 'accessToken');
+
+    final request = http.MultipartRequest('POST', url)
+      ..headers.addAll({
+        'XF-Api-Key': apiKey,
+        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      })
+      ..files.add(await http.MultipartFile.fromPath('file', filePath));
+
+    if (description != null) {
+      request.fields['description'] = description;
+    }
+
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+    print('Uploading to URL: $url');
+    if (response.statusCode == 200) {
+      return jsonDecode(responseBody);
+    } else {
+      final errorResponse = jsonDecode(responseBody);
+      final errorMessage = errorResponse['errors'] != null && errorResponse['errors'].isNotEmpty
+          ? errorResponse['errors'][0]['message']
+          : 'Unknown error occurred';
+      print('error uploading: $responseBody');
+      throw Exception('message: $errorMessage');
+    }
   }
 
   // GET /media/{id}/
@@ -210,8 +249,16 @@ class MediaService {
   }
 
   // POST /media-albums/
-  Future<dynamic> createMediaAlbum(Map<String, dynamic> albumData) async {
-    final url = Uri.parse('$baseUrl/media-albums/');
+  Future<dynamic> createMediaAlbum({
+    required String name,
+    String? description,
+  }) async {
+    final queryParams = {
+      'title': name,
+      if (description != null) 'description': description,
+    };
+
+    final url = Uri.parse('$baseUrl/media-albums/').replace(queryParameters: queryParams);
     final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.post(
@@ -221,7 +268,6 @@ class MediaService {
         'XF-Api-Key': apiKey,
         if (accessToken != null) 'Authorization': 'Bearer $accessToken',
       },
-      body: jsonEncode(albumData),
     );
     return await _handleResponse(response);
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pgi/core/constants/country_list.dart';
+import 'package:pgi/data/models/drop_list_model.dart';
 import 'package:pgi/services/api/xenforo_user_api.dart';
 import 'package:pgi/view/widgets/custom_button.dart';
 import 'package:pgi/view/widgets/custom_text_input.dart';
@@ -33,6 +35,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? selectedDay;
   String? selectedMonth;
   String? selectedYear;
+  String? selectedCountry;
 
   final List<String> days = List.generate(31, (index) => (index + 1).toString());
   final List<String> months = [
@@ -103,13 +106,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
       'dob[month]': selectedMonth, // Use the selected month
       'dob[year]': selectedYear, // Use the selected year
       'custom_fields': {
-          'first_name': firstNameController.text.trim(),
-          'last_name': lastNameController.text.trim(),
-          'phone': phoneController.text.trim(),
+          'firstname': firstNameController.text.trim(),
+          'lastname': lastNameController.text.trim(),
+          'phone_main': phoneController.text.trim(),
           'address': addressController.text.trim(),
           'city': cityController.text.trim(),
           'state': stateController.text.trim(),
           'postal_code': postalCodeController.text.trim(),
+          'country': selectedCountry,
         },
     };
 
@@ -200,69 +204,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedDay,
-                    items: days
-                        .map((day) => DropdownMenuItem(
-                              value: day,
-                              child: Text(day),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
+                    child: SelectDropList(
+                    OptionItem(id: selectedDay ?? '', title: selectedDay ?? 'Day'),
+                    DropListModel(days.map((day) => OptionItem(id: day, title: day)).toList()),
+                    (optionItem) {
                       setState(() {
-                        selectedDay = value;
+                      selectedDay = optionItem.title;
                       });
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'Day',
-                      border: OutlineInputBorder(),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedMonth,
-                    items: months
-                        .map((month) => DropdownMenuItem(
-                              value: month,
-                              child: Text(month),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SelectDropList(
+                    OptionItem(id: selectedMonth ?? '', title: selectedMonth ?? 'Month'),
+                    DropListModel(months.map((month) => OptionItem(id: month, title: month)).toList()),
+                    (optionItem) {
                       setState(() {
-                        selectedMonth = value;
+                      selectedMonth = optionItem.title;
                       });
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'Month',
-                      border: OutlineInputBorder(),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: selectedYear,
-                    items: years
-                        .map((year) => DropdownMenuItem(
-                              value: year,
-                              child: Text(year),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SelectDropList(
+                    OptionItem(id: selectedYear ?? '', title: selectedYear ?? 'Year'),
+                    DropListModel(years.map((year) => OptionItem(id: year, title: year)).toList()),
+                    (optionItem) {
                       setState(() {
-                        selectedYear = value;
+                      selectedYear = optionItem.title;
                       });
                     },
-                    decoration: const InputDecoration(
-                      labelText: 'Year',
-                      border: OutlineInputBorder(),
                     ),
                   ),
+                  ],
                 ),
-              ],
-            ),
             const SizedBox(height: 10),
 
             // First Name and Last Name
@@ -298,6 +275,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
               hintText: 'City',
               leftIcon: Icons.location_city,
               controller: cityController,
+            ),
+            const SizedBox(height: 10),
+
+            // Country Dropdown
+            const Text(
+              'Country',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            SelectDropList(
+              OptionItem(id: selectedCountry ?? '', title: selectedCountry ?? 'Select Country'),
+              DropListModel(countryList.map((country) => OptionItem(id: country['id']!, title: country['name']!)).toList()),
+              (optionItem) {
+              setState(() {
+                // Handle country selection
+                selectedCountry = optionItem.title;
+              });
+              },
             ),
             const SizedBox(height: 10),
 
