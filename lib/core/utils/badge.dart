@@ -4,7 +4,7 @@ class BadgeUI extends StatelessWidget {
   final String text;
   final String cssClass;
 
-  const BadgeUI({Key? key, required this.text, required this.cssClass}) : super(key: key);
+  const BadgeUI({super.key, required this.text, required this.cssClass});
 
   @override
   Widget build(BuildContext context) {

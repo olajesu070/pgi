@@ -101,7 +101,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final String avatarUrl = userDetails?['me']['avatar_urls']['s'] ?? 'https://picsum.photos/212';
 
     // Initialize fields if not set
-    if (_firstname.isEmpty && _lastname.isEmpty && _email.isEmpty && _bio.isEmpty) {
+    if (_firstname.isEmpty && _lastname.isEmpty && _email.isEmpty) {
       _firstname = firstName;
       _lastname = lastName;
       _email = email;
@@ -219,12 +219,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         });
                       },
                       enabled: false,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your bio';
-                        }
-                        return null;
-                      },
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),

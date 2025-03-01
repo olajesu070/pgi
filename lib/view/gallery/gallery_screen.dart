@@ -136,16 +136,32 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 ),
               ),
 
-          floatingActionButton: FloatingActionButton(
-            onPressed: (){
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context)=> MediaUploadPage(categories: mediaCategories,)),
-                );
-            },
-            backgroundColor: const Color(0xE40A5338),
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
+         floatingActionButton: Builder(
+          builder: (BuildContext context) {
+            return FloatingActionButton(
+              onPressed: () {
+                int currentIndex = DefaultTabController.of(context).index;
+
+                if (currentIndex == 1) {
+                  // If Albums tab is selected, send mediaAlbums
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MediaUploadPage(albums: mediaAlbums)),
+                  );
+                } else {
+                  // If Categories tab is selected, send mediaCategories
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => MediaUploadPage(categories: mediaCategories)),
+                  );
+                }
+              },
+              backgroundColor: const Color(0xE40A5338),
+              child: const Icon(Icons.add, color: Colors.white),
+            );
+          },
+        ),
+
       ),
     );
   }

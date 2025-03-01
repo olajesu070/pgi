@@ -156,6 +156,8 @@ Future<void> logResponseToFile(String responseBody) async {
     return await _post('threads/$threadId/', body);
   }
 
+  
+
   // Delete a thread
   Future<Map<String, dynamic>> deleteThread({
     required int threadId,

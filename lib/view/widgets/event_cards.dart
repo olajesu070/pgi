@@ -13,6 +13,8 @@ class EventCard extends StatelessWidget {
   final int viewCount;
   final int userId;
   final bool isRsvp;
+  final int eventId;
+  final bool canRsvp;
 
   const EventCard({
     super.key,
@@ -25,7 +27,9 @@ class EventCard extends StatelessWidget {
     required this.categoryTitle,
     required this.viewCount,
     required this.userId,
-     required this.isRsvp
+     required this.isRsvp,
+     required this.eventId,
+     required this.canRsvp,
   });
 
   @override
@@ -50,6 +54,8 @@ class EventCard extends StatelessWidget {
               eventDetails: message,
               userId: userId,
               isRsvp: isRsvp,
+              eventId: eventId,
+              canRsvp: canRsvp,
             ),
           ),
         );
