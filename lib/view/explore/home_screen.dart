@@ -300,6 +300,8 @@ class _HomeScreenState extends State<HomeScreen> {
             viewCount: event['view_count'] ?? 0,
             userId: event['user_id'],
             isRsvp: event['is_rsvp_enabled'] ?? false,
+            eventId: event['event_id'],
+            canRsvp: event['can_rsvp'] ?? false,
            );
         },
       ),

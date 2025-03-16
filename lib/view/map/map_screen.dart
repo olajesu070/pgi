@@ -5,6 +5,7 @@ import 'package:pgi/view/widgets/custom_app_bar.dart';
 import 'package:pgi/services/api/oauth2_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:pgi/view/widgets/map_widget.dart';
 
 const apiKey = "SpBinAbdDaWb5uNURKTM";
 const styleUrl = "https://api.maptiler.com/maps/hybrid/style.json";
@@ -59,6 +60,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
     }
 
     geoJsonData = List<Map<String, dynamic>>.from(features);
+    debugPrint('GeoJSON Data: $geoJsonData');
     setState(() {});
   }
 
@@ -69,19 +71,45 @@ class _EventMapScreenState extends State<EventMapScreen> {
     });
   }
 
-  void _updateMapFeatures() {
-    if (_mapController == null) return;
-    _mapController!.clearLines();
-    _mapController!.clearSymbols();
-    _mapController!.clearFills();
+ void _updateMapFeatures() {
+  if (_mapController == null) return;
 
-    for (var feature in geoJsonData) {
-      int categoryId = feature['properties']['category_id'];
-      if (categoryVisibility[categoryId] == true) {
-        _addGeoJsonToMap(feature, categoryColors[categoryId] ?? "#FFFFFF");
-      }
-    }
-  }
+  List<Map<String, dynamic>> visibleFeatures = geoJsonData.where((feature) {
+    int categoryId = feature['properties']['category_id'];
+    return categoryVisibility[categoryId] == true;
+  }).toList();
+
+  _mapController!.setGeoJsonSource(
+    "event-geojson-source",
+    {
+      "type": "FeatureCollection",
+      "features": visibleFeatures,
+    },
+  );
+}
+
+void _addGeoJsonSource() {
+  if (_mapController == null) return;
+
+  _mapController!.addGeoJsonSource(
+    "event-geojson-source",
+     {
+      "type": "FeatureCollection",
+      "features": geoJsonData,
+    },
+  ).then((_) {
+    _mapController!.addLayer(
+      "event-geojson-source",
+      "event-layer",
+      const SymbolLayerProperties(
+        iconImage: "default-marker",
+        iconSize: 1.5,
+        iconColor: "#ff0000",
+      ),
+    );
+  });
+}
+
 
   void _addGeoJsonToMap(Map<String, dynamic> feature, String color) {
     final geometry = feature['geometry'];
@@ -104,11 +132,17 @@ class _EventMapScreenState extends State<EventMapScreen> {
   }
 
   void _addPointToMap(List<dynamic> coordinates, String color) {
-    _mapController?.addSymbol(SymbolOptions(
+    // _mapController?.addSymbol(SymbolOptions(
+    //   geometry: LatLng(coordinates[1], coordinates[0]),
+    //   iconImage: 'default-marker',
+    //   iconColor: color,
+    // ));
+    _mapController?.addCircle(CircleOptions(
       geometry: LatLng(coordinates[1], coordinates[0]),
-      iconImage: 'default-marker',
-      iconColor: color,
+      circleRadius: 10.0,
+      circleColor: color,
     ));
+
   }
 
   void _addLineStringToMap(List<dynamic> coordinates, String color) {
@@ -127,9 +161,15 @@ class _EventMapScreenState extends State<EventMapScreen> {
         .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
         .toList();
 
-    _mapController?.addFill(FillOptions(
-      geometry: [latLngList],
-      fillColor: color,
+    _mapController?.addFill(const FillOptions(
+      geometry: [[
+                LatLng(46.41896082753048, -94.27690002090792),
+                LatLng(46.41809149899923,-94.27444230934333),
+                LatLng( 46.41846265561273,-94.27422931202152),
+                LatLng(46.41931419733712,  -94.27663007087365),
+                LatLng(46.41896082753048, -94.27690002090792),
+              ]],
+      fillColor: "rgba(255, 0, 0, 0.5)",
       fillOpacity: 0.5,
     ));
   }
@@ -146,7 +186,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
     _mapController?.addSymbol(SymbolOptions(
       geometry: userLocation,
       iconImage: 'default-marker',
-      iconColor: "#FF0000",
+      iconColor: "rgba(255, 0, 0, 0.5)",
     ));
 
     _mapController?.animateCamera(
@@ -163,19 +203,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
           Expanded(
             child: Stack(
               children: [
-                MapLibreMap(
-                   styleString: "$styleUrl?key=$apiKey",
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                    _updateMapFeatures();
-                  },
-                  myLocationEnabled: true,
-                  myLocationTrackingMode: MyLocationTrackingMode.tracking,
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(0.0, 0.0),
-                    zoom: 2.0,
-                  ),
-                ),
+                const MapWidget(),
                 Positioned(
                   bottom: 20,
                   right: 20,

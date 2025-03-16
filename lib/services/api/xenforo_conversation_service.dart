@@ -19,34 +19,40 @@ class ConversationService {
     }
   }
 
-  /// GET conversations/
-  /// Gets the API user's list of conversations.
-  Future<Map<String, dynamic>> getConversations({
-    int? page,
-    int? starterId,
-    int? receiverId,
-    bool? starred,
-    bool? unread,
-  }) async {
-    final queryParams = <String, String>{};
-    if (page != null) queryParams['page'] = page.toString();
-    if (starterId != null) queryParams['starter_id'] = starterId.toString();
-    if (receiverId != null) queryParams['receiver_id'] = receiverId.toString();
-    if (starred != null) queryParams['starred'] = starred.toString();
-    if (unread != null) queryParams['unread'] = unread.toString();
+ /// GET conversations/
+/// Gets the API user's list of conversations with optional filters.
+Future<Map<String, dynamic>> getConversations({
+  int? page,
+  int? starterId,
+  int? receiverId,
+  bool? starred,
+  bool? unread,
+  String? search, // 🔍 New search parameter
+}) async {
+  final queryParams = <String, String>{};
+  
+  if (page != null) queryParams['page'] = page.toString();
+  if (starterId != null) queryParams['starter_id'] = starterId.toString();
+  if (receiverId != null) queryParams['receiver_id'] = receiverId.toString();
+  if (starred != null) queryParams['starred'] = starred.toString();
+  if (unread != null) queryParams['unread'] = unread.toString();
+  if (search != null && search.isNotEmpty) queryParams['q'] = search; // 🔍 Add search query
 
-    final url = Uri.parse('$baseUrl/conversations/').replace(queryParameters: queryParams);
-    final accessToken = await _secureStorage.read(key: 'accessToken');
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'XF-Api-Key': apiKey,
-        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-      },
-    );
-    return await _handleResponse(response);
-  }
+  final url = Uri.parse('$baseUrl/conversations/').replace(queryParameters: queryParams);
+  final accessToken = await _secureStorage.read(key: 'accessToken');
+  
+  final response = await http.get(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'XF-Api-Key': apiKey,
+      if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+    },
+  );
+
+  return await _handleResponse(response);
+}
+
 
  Future<Map<String, dynamic>> createConversation({
   required List<int> recipientIds,
@@ -85,7 +91,7 @@ class ConversationService {
 
   // Log the response for debugging purposes
   debugPrint('Response status: ${response.statusCode}');
-  debugPrint('Response body: ${response}');
+  debugPrint('Response body: $response');
 
   return await _handleResponse(response);
 }

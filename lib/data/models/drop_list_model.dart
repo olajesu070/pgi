@@ -18,7 +18,7 @@ class SelectDropList extends StatefulWidget {
   final DropListModel dropListModel;
   final Function(OptionItem optionItem) onOptionSelected;
 
-  SelectDropList(this.itemSelected, this.dropListModel, this.onOptionSelected);
+  const SelectDropList(this.itemSelected, this.dropListModel, this.onOptionSelected, {super.key});
 
   @override
   _SelectDropListState createState() => _SelectDropListState(itemSelected, dropListModel);
@@ -40,7 +40,7 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
     super.initState();
     expandController = AnimationController(
         vsync: this,
-        duration: Duration(milliseconds: 350)
+        duration: const Duration(milliseconds: 350)
     );
     animation = CurvedAnimation(
       parent: expandController,
@@ -73,7 +73,7 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8.0),
               color: Colors.transparent,
-              border: Border.all(color: Color(0xFFE4DFDF)),
+              border: Border.all(color: const Color(0xFFE4DFDF)),
               
             ),
             child: Row(
@@ -96,10 +96,10 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
                     )
                 ),
                 Align(
-                  alignment: Alignment(1, 0),
+                  alignment: const Alignment(1, 0),
                   child: Icon(
                     isShow ? Icons.arrow_drop_down_sharp : Icons.arrow_right,
-                    color: Color(0xFF0A5338),
+                    color: const Color(0xFF0A5338),
                     size: 24,
                   ),
                 ),
@@ -157,8 +157,8 @@ class _SelectDropListState extends State<SelectDropList> with SingleTickerProvid
               flex: 1,
               child: Container(
                 padding: const EdgeInsets.only(top: 20),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: const Color(0xFFEEEEEE)!, width: 1)),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
                 ),
                 child: Text(item.title,
                     style: const TextStyle(

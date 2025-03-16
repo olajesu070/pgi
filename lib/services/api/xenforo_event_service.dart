@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -15,7 +16,7 @@ class XenforoEventService {
       if (response.body.isEmpty) {
         throw Exception('Empty response body received.');
       }
-      // debugPrint('event info: ${response.body}');
+      debugPrint('event info: ${response.body}');
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed with status code: ${response.statusCode}${response.body}');
@@ -41,8 +42,8 @@ class XenforoEventService {
 
   /// Get event details: GET /api/events/<event_id> 
   /// Fetches a specific event
-  Future<Map<String, dynamic>> fetchEventById(int id) async {
-    final url = Uri.parse('$baseUrl/events/$id/');
+  Future<Map<String, dynamic>> fetchEventAtt() async {
+    final url = Uri.parse('$baseUrl/events?rsvp_attending=1');
     final accessToken = await _secureStorage.read(key: 'accessToken');
 
     final response = await http.get(
@@ -58,24 +59,31 @@ class XenforoEventService {
 
   /// RSVP to an event: POST /api/events/<event_id>/rsvp 
   /// RSVP to an event
-  Future<Map<String, dynamic>> rsvpToEvent({
-    required int eventId,
-    required String rsvp,
-  }) async {
-    final url = Uri.parse('$baseUrl/events/$eventId/rsvp/');
-    final accessToken = await _secureStorage.read(key: 'accessToken');
+Future<Map<String, dynamic>> rsvpToEvent({
+  required int eventId,
+  required String rsvp,
+}) async {
+  // Build the URL with the query parameter for rsvp_status
+  final url = Uri.parse('$baseUrl/events/$eventId/rsvp/')
+      .replace(queryParameters: {'rsvp_status': rsvp});
+  final accessToken = await _secureStorage.read(key: 'accessToken');
 
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'XF-Api-Key': apiKey,
-        if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-      },
-      body: jsonEncode({'rsvp': rsvp}),
-    );
-    return await _handleResponse(response);
-  }
+  // Debug print to verify the URL with query parameter
+  print('RSVP URL: $url');
+
+  final response = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'XF-Api-Key': apiKey,
+      if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+    },
+    // Remove the request body since the parameter is now in the URL.
+  );
+  return await _handleResponse(response);
+}
+
+
 
   /// Get all categories: GET/api/events/categories
   /// Fetches all event categories
@@ -146,7 +154,26 @@ class XenforoEventService {
     );
     return await _handleResponse(response);
   }
+
+  /// Get RSVP'd events: GET /api/events/rsvped
+/// Fetches all events the user has RSVP'd to
+Future<Map<String, dynamic>> fetchRsvpedEvents() async {
+  final url = Uri.parse('$baseUrl/events/rsvp/');
+  final accessToken = await _secureStorage.read(key: 'accessToken');
+
+  final response = await http.get(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'XF-Api-Key': apiKey,
+      if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+    },
+  );
+  return await _handleResponse(response);
 }
+}
+
+
 
 
 // Create a new event: POST /api/events 

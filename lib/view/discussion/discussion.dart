@@ -273,15 +273,6 @@ Widget build(BuildContext context) {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.thumb_up, color: Colors.blue),
-                    onPressed: () => _handleReaction(reply, 1),
-                  ),
-                  Text('$reactionScore'),
-                ],
-              ),
               TextButton.icon(
                 onPressed: () {
                   _handleReply(reply);

@@ -50,13 +50,9 @@ class _OrganizerDetailsScreenState extends State<OrganizerDetailsScreen> {
 
    final userGroup = UserGroup.getUserGroupById(5); 
 
-     if (userGroup != null) {
-    print('User Group: ${userGroup.text}');
-     print('CSS Class: ${userGroup.cssClass}'); 
+  print('User Group: ${userGroup.text}');
+   print('CSS Class: ${userGroup.cssClass}'); 
 
-  } else {
-    print('User group not found.');
-  }
 
     final user = _userDetails!['user'];
     final avatarUrl = user['avatar_urls']['o'] ?? 'https://picsum.photos/201/200';

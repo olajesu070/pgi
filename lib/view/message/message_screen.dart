@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:pgi/services/api/xenforo_conversation_service.dart';
 import 'package:pgi/view/message/chatscreen.dart';
 import 'package:pgi/view/widgets/message_card.dart';
+import 'dart:async';
 
 class MessageScreen extends StatefulWidget {
   const MessageScreen({super.key});
@@ -13,10 +14,14 @@ class MessageScreen extends StatefulWidget {
 
 class _MessageScreenState extends State<MessageScreen> {
   final ConversationService _conversationService = ConversationService();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
+
   bool isSearching = false;
-  bool isLoading = true; // Loading state
+  bool isLoading = true;
   int currentPage = 1;
   int totalPages = 1;
+  String _searchQuery = ''; // Search query state
   List<dynamic> conversations = [];
 
   @override
@@ -29,8 +34,13 @@ class _MessageScreenState extends State<MessageScreen> {
     setState(() {
       isLoading = true;
     });
+
     try {
-      final response = await _conversationService.getConversations(page: currentPage);
+      final response = await _conversationService.getConversations(
+        page: currentPage,
+        search: _searchQuery, // Pass search query
+      );
+
       setState(() {
         conversations = response['conversations'] ?? [];
         totalPages = response['pagination']['last_page'] ?? 1;
@@ -42,6 +52,25 @@ class _MessageScreenState extends State<MessageScreen> {
       });
       print('Error fetching conversations: $e');
     }
+  }
+
+  /// Handles search with a debounce effect (to avoid excessive API calls)
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = query;
+        currentPage = 1; // Reset pagination on search
+      });
+      _fetchConversations();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -57,23 +86,27 @@ class _MessageScreenState extends State<MessageScreen> {
         ),
         title: isSearching
             ? TextField(
+                controller: _searchController,
                 decoration: const InputDecoration(
-                  hintText: "Search...",
+                  hintText: "Search messages...",
                   border: InputBorder.none,
                 ),
-                onSubmitted: (query) {
-                  setState(() {
-                    isSearching = false;
-                  });
-                },
+                onChanged: _onSearchChanged, // Live search
               )
-            : const Text("Message", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),),
+            : const Text(
+                "Messages",
+                style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
         actions: [
           IconButton(
             icon: Icon(isSearching ? Icons.close : Icons.search, color: Colors.white),
             onPressed: () {
               setState(() {
                 isSearching = !isSearching;
+                if (!isSearching) {
+                  _searchController.clear();
+                  _onSearchChanged(''); // Reset search
+                }
               });
             },
           ),
@@ -82,6 +115,7 @@ class _MessageScreenState extends State<MessageScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            // Pagination Controls
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
@@ -117,11 +151,13 @@ class _MessageScreenState extends State<MessageScreen> {
               ),
             ),
             const Divider(thickness: 1),
+
+            // Conversations List
             Expanded(
               child: isLoading
-                  ? const Center(child: CircularProgressIndicator()) // Loading indicator
+                  ? const Center(child: CircularProgressIndicator())
                   : conversations.isEmpty
-                      ? const Center(child: Text('No conversations available'))
+                      ? const Center(child: Text('No conversations found'))
                       : ListView.builder(
                           itemCount: conversations.length,
                           itemBuilder: (context, index) {
